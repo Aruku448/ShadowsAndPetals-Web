@@ -304,7 +304,7 @@
     const element = selectedElementKey ? elementRegistry.get(selectedElementKey) : null; panel.hidden = !element;
     if (!element) return;
     const style = state.elementStyles[selectedElementKey] || {};
-    $("[data-element-name]").textContent = elementLabel(element); const text = $("[data-element-text]"); text.value = element.dataset.bind ? state[element.dataset.bind] ?? "" : style.text ?? (element.children.length ? "" : element.textContent.trim()); text.disabled = element.children.length > 0 && !element.dataset.bind;
+    $("[data-element-name]").textContent = elementLabel(element); const text = $("[data-element-text]"); const textBinding = element.dataset.bind || element.dataset.colorText; text.value = textBinding ? state[textBinding] ?? "" : style.text ?? (element.children.length ? "" : element.textContent.trim()); text.disabled = element.children.length > 0 && !textBinding;
     const href = $("[data-element-href]"); href.value = style.href ?? (element.matches("a") ? element.getAttribute("href") || "" : ""); href.disabled = !element.matches("a");
     const source = $("[data-element-src]"); source.value = style.src ?? (element.matches("img") ? element.getAttribute("src") || "" : ""); source.disabled = !element.matches("img"); source.closest(".element-source-field").hidden = !element.matches("img");
     $("[data-element-color]").value = colorToHex(style.color || getComputedStyle(element).color); $("[data-element-bg]").value = colorToHex(style.backgroundColor || getComputedStyle(element).backgroundColor, "#ffffff");
@@ -398,7 +398,7 @@
   $$('[data-element-style="x"], [data-element-style="y"]').forEach((input) => { input.min = "-100"; input.max = "200"; });
   $$('[data-element-style="width"]').forEach((input) => { input.min = "5"; input.max = "200"; });
   $$('[data-element-style="height"]').forEach((input) => { input.min = "0"; input.max = "1600"; });
-  $("[data-element-text]")?.addEventListener("input", (event) => { const element = elementRegistry.get(selectedElementKey); if (!element) return; if (element.dataset.bind) { state[element.dataset.bind] = event.target.value; render({ sync: false }); saveState(); } else updateElementStyle(selectedElementKey, "text", event.target.value); });
+  $("[data-element-text]")?.addEventListener("input", (event) => { const element = elementRegistry.get(selectedElementKey); if (!element) return; const textBinding = element.dataset.bind || element.dataset.colorText; if (textBinding) { state[textBinding] = event.target.value; render({ sync: false }); saveState(); } else updateElementStyle(selectedElementKey, "text", event.target.value); });
   $("[data-element-href]")?.addEventListener("input", (event) => updateElementStyle(selectedElementKey, "href", event.target.value));
   $("[data-element-src]")?.addEventListener("input", (event) => updateElementStyle(selectedElementKey, "src", event.target.value));
   $("[data-element-color]")?.addEventListener("input", (event) => updateElementStyle(selectedElementKey, "color", event.target.value));
