@@ -1,0 +1,13 @@
+{
+  "name": "ashfall-mod-showcase",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A configurable editorial showcase for a Minecraft mod.",
+  "scripts": {
+    "dev": "python3 -m http.server 8088",
+    "check": "node --check app.js"
+  },
+  "dependencies": {
+    "lucide": "^0.544.0"
+  }
+}
