@@ -33,7 +33,7 @@
 - 版本信息：`version`、`releaseDate`、`loader`、`downloadLabel`、`downloadUrl`
 - 视觉参数：`accent`、`heroShade`、`heroFocus`、`textureGrain`、`mediaHighlight`、`glassOpacity`、`editorOpacity`
 - 集合数据：`news[]`、`expertise[]`
-- 编辑器数据：`elementStyles`、`customElements`
+- 编辑器数据：`elementStyles`、`customElements`、`pages`
 
 带有 `data-bind="字段名"` 的节点由 `render()` 写入文本。带有 `data-image="字段名"` 的图片由 `render()` 写入 `src`。带有 `data-bind-href="字段名"` 的链接由 `render()` 写入 `href`。
 
@@ -105,6 +105,33 @@
 7. 确认新节点被元素注册器捕获，并能通过编号列表和指针选择器编辑。
 
 完成标准：刷新后内容仍出现；编辑器修改后刷新仍保留；桌面和移动端没有文字溢出、重叠或不可点击控件。
+
+## 子页面系统
+
+子页面使用 `index.html?page=<slug>` 静态路由，例如 `index.html?page=world-systems`。链接必须显式包含 `index.html`，这样通过服务器访问和直接双击本地文件时都能正常工作；部署到 GitHub Pages 等静态托管环境时也不需要服务器重写规则。
+
+子页面保存在 `state.pages[]`，字段包括：
+
+- 身份与导航：`id`、`slug`、`navLabel`、`published`
+- 首屏：`eyebrow`、`title`、`summary`、`heroImage`
+- 正文：`contentTitle`、`body`
+- 行动按钮：`ctaLabel`、`ctaUrl`
+
+编辑器的“子页”页签支持新增、复制、删除、预览、上传头图、复制链接，以及把首页按钮或图片快速连接到当前子页。`published` 只控制页面是否进入桌面导航和全屏菜单；草稿仍可通过其地址直接预览。
+
+维护子页时注意：
+
+1. `id` 是持久身份，创建后不要修改；`slug` 可以修改，但必须经过 `uniqueSlug()` 去重。
+2. 子页正文节点使用 `data-page-field-display`，编辑器表单使用 `data-page-field`。两者都应指向 `pages[]` 中的同名字段。
+3. 子页元素 key 以 `page:<id>:` 开头，因此不同页面的字号、位置和透明度不会互相覆盖。
+4. 子页自定义元素带有 `pageId`；首页自定义元素的 `pageId` 为 `null`。渲染和删除时都要保持此归属关系。
+5. 首页入口映射保存在 `state.homeLinks`，格式是 `{ [首页元素 key]: 子页 id }`。首页按钮和图片的元素 key 必须稳定；删除子页时也要清理指向该 `id` 的映射。
+6. 子页 `body` 正文编辑上限为 30000 字（3W），编辑器保持至少 280px 高；不要重新加回 1800 字的短限制。
+7. 正文网页宽度使用响应式 `clamp()`，桌面保留左侧分区标记和右侧留白，移动端保持 18px 边距；不要把正文固定为全屏宽度。
+8. 新增子页模板分区时，桌面端至少保持 `max(100svh, 56.25vw)` 的视觉高度，并补充移动端布局。
+9. 不要改成 `/slug/` 路由，除非部署端已经配置 history fallback 或为每个路径生成独立 HTML。
+
+验证至少覆盖：首页、有效 `index.html?page=`、无效 `index.html?page=`、编辑器新增/修改/复制/删除、刷新后的本地保存，以及桌面与移动端首屏。
 
 ## 保存、导入和导出
 
