@@ -182,13 +182,17 @@
 
   function homeLinkTargetLabel(element) {
     const kind = element.matches("img") ? "图片" : "按钮";
+    const newsIndex = element.closest(".news-card")?.dataset.newsIndex;
+    if (newsIndex != null && element.classList.contains("card-cta")) return `${kind} · 更新卡片 ${String(Number(newsIndex) + 1).padStart(2, "0")} · 查看更新`;
+    const expertiseIndex = element.closest(".expertise-item")?.dataset.expertiseIndex;
+    if (expertiseIndex != null && element.classList.contains("item-arrow")) return `${kind} · 系统 ${String(Number(expertiseIndex) + 1).padStart(2, "0")} · ${element.closest(".expertise-item")?.querySelector("h3")?.textContent.trim() || "打开系统"}`;
     const name = String(element.matches("img") ? element.getAttribute("alt") || element.dataset.image || "未命名图片" : element.textContent || element.getAttribute("aria-label") || "未命名按钮").trim().replace(/\s+/g, " ").slice(0, 42);
     return `${kind} · ${elementScope(element)} · ${name}`;
   }
 
   function homeLinkTargets() {
     const targets = new Map();
-    $$("main > section a, main > section button, main > section img").filter((element) => !element.matches(".rail-prev, .rail-next")).forEach((element) => {
+    $$("main > section a, main > section button, main > section img, main > section .item-arrow").filter((element) => !element.matches(".rail-prev, .rail-next")).forEach((element) => {
       const key = elementKey(element);
       targets.set(key, { key, element, kind: element.matches("img") ? "image" : "button", label: homeLinkTargetLabel(element) });
     });
@@ -205,7 +209,7 @@
       element.classList.remove("home-page-link-target");
       element.removeAttribute("data-home-page-link");
       element.removeAttribute("data-home-original-href");
-      if (element.matches("img")) { element.removeAttribute("role"); element.removeAttribute("tabindex"); }
+      if (element.matches("img, .item-arrow")) { element.removeAttribute("role"); element.removeAttribute("tabindex"); }
     });
   }
 
@@ -218,7 +222,7 @@
       if (element.matches("a")) {
         element.dataset.homeOriginalHref = element.getAttribute("href") || "#";
         element.setAttribute("href", pageUrl(page.slug));
-      } else if (element.matches("img")) {
+      } else if (element.matches("img, .item-arrow")) {
         element.setAttribute("role", "link");
         element.tabIndex = 0;
       }
@@ -542,10 +546,10 @@
       if (!matches.length) return;
       const group = document.createElement("optgroup");
       group.label = label;
-      matches.forEach((target) => {
+      matches.forEach((target, index) => {
         const linkedPage = state.pages.find((item) => item.id === state.homeLinks[target.key]);
         const suffix = linkedPage ? linkedPage.id === page?.id ? " · 已连接" : ` → ${linkedPage.navLabel || linkedPage.title}` : "";
-        group.append(new Option(`${target.label}${suffix}`, target.key));
+        group.append(new Option(`${String(index + 1).padStart(2, "0")} · ${target.label}${suffix}`, target.key));
       });
       select.append(group);
     });
@@ -682,7 +686,7 @@
   $(".import-button input").addEventListener("change", async (event) => { try { const previous = clone(state); state = mergeConfig(JSON.parse(await event.target.files[0].text())); remember(previous); render(); saveState(); showToast("配置已导入"); } catch { showToast("配置文件格式不正确"); } event.target.value = ""; });
   $(".reset-button").addEventListener("click", () => { const previous = clone(state); state = clone(defaults); remember(previous); render(); saveState(); showToast("已恢复示例内容，可撤销"); });
 
-  function setupRail(selector, prev, next, currentAttr) { const rail = $(selector); const step = () => { const card = rail.firstElementChild; if (!card) return 0; return card.getBoundingClientRect().width + (parseFloat(getComputedStyle(rail).gap) || 0); }; const move = (dir) => rail.scrollBy({ left: dir * step(), behavior: "smooth" }); $(prev).addEventListener("click", () => move(-1)); $(next).addEventListener("click", () => move(1)); rail.addEventListener("scroll", () => { const index = Math.max(0, Math.min(15, Math.round(rail.scrollLeft / step()))); $(currentAttr).textContent = String(index + 1).padStart(2, "0"); setActiveNews(index); }, { passive: true }); let down = false; let startX = 0; let startScroll = 0; rail.addEventListener("pointerdown", (event) => { down = true; startX = event.clientX; startScroll = rail.scrollLeft; rail.setPointerCapture(event.pointerId); rail.classList.add("is-dragging"); }); rail.addEventListener("pointermove", (event) => { if (down) rail.scrollLeft = startScroll - event.clientX + startX; }); ["pointerup", "pointercancel"].forEach((name) => rail.addEventListener(name, () => { down = false; rail.classList.remove("is-dragging"); })); }
+  function setupRail(selector, prev, next, currentAttr) { const rail = $(selector); const step = () => { const card = rail.firstElementChild; if (!card) return 0; return card.getBoundingClientRect().width + (parseFloat(getComputedStyle(rail).gap) || 0); }; const move = (dir) => rail.scrollBy({ left: dir * step(), behavior: "smooth" }); $(prev).addEventListener("click", () => move(-1)); $(next).addEventListener("click", () => move(1)); rail.addEventListener("scroll", () => { const index = Math.max(0, Math.min(15, Math.round(rail.scrollLeft / step()))); $(currentAttr).textContent = String(index + 1).padStart(2, "0"); setActiveNews(index); }, { passive: true }); let down = false; let startX = 0; let startScroll = 0; rail.addEventListener("pointerdown", (event) => { if (event.target.closest("a, button, input, select, textarea")) return; down = true; startX = event.clientX; startScroll = rail.scrollLeft; rail.setPointerCapture(event.pointerId); rail.classList.add("is-dragging"); }); rail.addEventListener("pointermove", (event) => { if (down) rail.scrollLeft = startScroll - event.clientX + startX; }); ["pointerup", "pointercancel"].forEach((name) => rail.addEventListener(name, () => { down = false; rail.classList.remove("is-dragging"); })); }
   setupRail(".news-rail", ".rail-prev", ".rail-next", "[data-news-current]");
 
   document.addEventListener("pointermove", (event) => {
@@ -713,10 +717,15 @@
     location.href = pageUrl(page.slug);
   });
   document.addEventListener("keydown", (event) => {
-    const target = event.target.closest('img[data-home-page-link]');
+    const target = event.target.closest('img[data-home-page-link], .item-arrow[data-home-page-link]');
     if (!target || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
     target.click();
+  });
+  $(".footer-round")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    history.replaceState(null, "", `${location.pathname}${location.search}`);
   });
   $(".watch-button")?.addEventListener("click", () => showToast("预告片将在下一版本上线"));
   $(".search-button")?.addEventListener("click", () => { $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); const query = $("#site-search").value.trim().toLowerCase(); const hits = query ? [...document.querySelectorAll("main h2, main h3, main p")].filter((el) => el.textContent.toLowerCase().includes(query)).length : 0; $(".search-result").textContent = query ? `找到 ${hits} 个相关内容` : "请输入关键词"; });
