@@ -10,7 +10,7 @@
 - 位图素材：`assets/`
 - 依赖：`package.json`
 - 语法检查：`npm run check`
-- 本地服务：`npm run dev`，默认端口见 `package.json`。该服务同时提供图片上传接口，不要用 `file://` 打开页面来上传图片。
+- 本地服务：Linux/macOS 使用 `npm run dev`；Windows 可双击项目根目录的 `start-server.bat`。脚本默认使用 8091 端口，也可在命令提示符中用 `set PORT=8092 && npm run dev` 更换端口。该服务同时提供图片上传接口，不要用 `file://` 打开页面来上传图片。首次运行前请安装 Node.js 18 或更新版本。
 
 修改后至少运行 `npm run check`。涉及布局、交互、编辑器或动效时，还要在浏览器中打开页面并验证对应流程。
 
