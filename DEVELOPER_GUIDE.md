@@ -12,6 +12,22 @@
 - 语法检查：`npm run check`
 - 本地服务：Linux/macOS 使用 `npm run dev`；Windows 可双击项目根目录的 `start-server.bat`。脚本默认使用 8091 端口，也可在命令提示符中用 `set PORT=8092 && npm run dev` 更换端口。该服务同时提供图片上传接口，不要用 `file://` 打开页面来上传图片。首次运行前请安装 Node.js 18 或更新版本。
 
+### Windows 安装 Node.js
+
+1. 打开 [Node.js 官方下载页](https://nodejs.org/en/download/)，下载 Windows Installer（`.msi`）。选择 LTS 版本即可；当前项目最低要求 Node.js 18。
+2. 双击安装包，保持默认选项完成安装。安装程序会同时安装 `npm`，并将 Node.js 加入系统 PATH。
+3. 打开新的“命令提示符”窗口，验证安装：
+
+   ```bat
+   node --version
+   npm --version
+   ```
+
+   `node --version` 输出 `v18` 或更高版本即可。
+4. 进入项目目录，双击 `start-server.bat`；或在命令提示符运行 `npm run dev`，然后打开 `http://localhost:8091`。
+
+如果命令提示符提示找不到 `node`，请关闭并重新打开窗口；仍无效时重新运行 Node.js 安装程序并确认启用了 PATH 选项。Node.js 的版本状态可在[官方发布说明](https://nodejs.org/en/about/previous-releases)查看。
+
 修改后至少运行 `npm run check`。涉及布局、交互、编辑器或动效时，还要在浏览器中打开页面并验证对应流程。
 
 ## 修改顺序
