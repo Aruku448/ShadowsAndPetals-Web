@@ -1,0 +1,438 @@
+{
+  "configVersion": 5,
+  "brand": "织影落花",
+  "kicker": "FORGE 1.20.1 / 生存扩展模组",
+  "heroLine1": "织影落花",
+  "heroLine2": "Shadows",
+  "heroLine3": "&Petals",
+  "heroSummary": "禅意，是Minecraft里的永恒语言",
+  "manifestoEyebrow": "一款以和风美学为核心的装饰&农业模组",
+  "manifestoBody": "“庭院，四季，耕作”\n\n我们通过这三个元素，在模组内加入了兼具观赏性与实用性的装饰，家具，作物，环境等细节\n\n“物哀，幽玄，侘寂”\n\n我们通过这三个元素，力图让玩家们在自己的Minecraft世界中找到精神上的和风世界",
+  "newsTitle": "织影落花 的最新动态",
+  "newsBody": "从月度更新公告，到参与活动介绍，再到一些学术上的展示，您都能在这里浏览",
+  "expertiseTitle": "关于我们的一切",
+  "expertiseBody": "从织影落花模组的视觉化方块\n抑或是织影落花的听觉化表达\n这里有太多的元素等大家了解",
+  "aboutTitle": "关于\n我们的诞生",
+  "aboutBody": "织影落花模组的诞生\n是我们在背后的不断努力\n当然也有大家的不断支持",
+  "researchTitle": "花开花落\n总会再有一年",
+  "researchBody": "织影落花模组的终点\n无论什么时候问我们\n答案永远会是“明年”\n那么我们在这一年又会做些什么？\n\n",
+  "sustainabilityTitle": "我们需要您的反馈",
+  "sustainabilityBody": "从低负载世界生成到可迁移存档，我们把性能、兼容性与长期更新纳入每一项系统设计。",
+  "downloadTitle": "诚邀您\n翻开我们这本\n《织影落花集》",
+  "downloadLabel": "下载 V2.4.0",
+  "downloadUrl": "#",
+  "version": "V2.4.0",
+  "releaseDate": "2026.08.21",
+  "loader": "Forge 1.20.1",
+  "accent": "#FF5A36",
+  "heroShade": "29",
+  "heroFocus": 52,
+  "textureGrain": "0",
+  "mediaHighlight": "0",
+  "glassOpacity": "23",
+  "editorOpacity": "100",
+  "elementStyles": {
+    "id:manifesto": {
+      "positionMode": "flow",
+      "x": "69",
+      "width": "76",
+      "height": "1600",
+      "align": "stretch"
+    },
+    "manifesto:p:0": {
+      "align": "left",
+      "positionMode": "flow",
+      "text": "Shadows & Petals"
+    },
+    "manifesto:h2:0": {
+      "width": "149",
+      "y": "85",
+      "fontSize": "55",
+      "positionMode": "flow",
+      "borderRadius": "0",
+      "opacity": "100",
+      "align": "stretch",
+      "translateY": "-45",
+      "x": "26",
+      "height": "862"
+    },
+    "manifesto:p:1": {
+      "height": "201",
+      "width": "104",
+      "translateY": "-34",
+      "positionMode": "flow",
+      "y": "-71",
+      "align": "left",
+      "fontSize": "37",
+      "borderRadius": "0"
+    },
+    "id:top": {
+      "positionMode": "flow"
+    },
+    "news:h2:0": {
+      "positionMode": "flow",
+      "width": "136",
+      "x": "22",
+      "align": "stretch",
+      "height": "126",
+      "translateY": "19",
+      "color": "#c9b603",
+      "y": "40",
+      "fontSize": "76"
+    },
+    "custom:custom-mtc42wmm": {
+      "positionMode": "free",
+      "align": "center",
+      "x": 50,
+      "y": 50,
+      "width": 40,
+      "zIndex": 5,
+      "deleted": true
+    },
+    "top:div:2": {
+      "deleted": true
+    },
+    "news:0:image": {
+      "opacity": "100"
+    },
+    "news:img:0": {
+      "opacity": "100"
+    },
+    "news:0:content": {
+      "opacity": "100"
+    },
+    "news:0:body": {
+      "opacity": "100",
+      "text": "看看我们在这几个月内更新了什么吧"
+    },
+    "sustainability:p:0": {
+      "text": "联系我们"
+    },
+    "id:about": {},
+    "sustainability:div:0": {
+      "opacity": "100"
+    },
+    "about:div:0": {},
+    "showreel:section:0": {},
+    "sustainability:a:0": {
+      "color": "#ffffff",
+      "fontSize": "18"
+    },
+    "manifesto:div:0": {
+      "align": "left",
+      "height": "17",
+      "width": "29"
+    },
+    "manifesto:div:1": {
+      "align": "stretch",
+      "width": "45"
+    },
+    "expertise:0:title": {
+      "text": "宏观 & 微观 庭院"
+    },
+    "expertise:0:caption": {
+      "text": "秋庭收远岫，十载山川归一隅，方寸钠乾坤"
+    },
+    "expertise:1:title": {
+      "text": "自然 & 方块 世界"
+    },
+    "expertise:1:caption": {
+      "text": "春夏于一庭，四方蜃景一目尽，秋冬尚在外"
+    },
+    "expertise:2:title": {
+      "text": "户外 & 户内 家具"
+    },
+    "expertise:2:caption": {
+      "text": "陋室细雨闲，方寸忧思添何物，明日定不足"
+    },
+    "expertise:3:title": {
+      "text": "工具 & 武备 器械"
+    },
+    "expertise:4:title": {
+      "text": "农业 & 饮食 相关"
+    },
+    "expertise:5:title": {
+      "text": "茶道 & 酒水 饮品"
+    },
+    "expertise:6:title": {
+      "text": "雅韵 & 禅宗 文化"
+    },
+    "expertise:7:title": {
+      "text": "成就 & 挑战 内容"
+    },
+    "expertise:3:caption": {
+      "text": "夏木正葱茏，巧器妙思点万物，天地霎时庸"
+    },
+    "expertise:4:caption": {
+      "text": "丰收时节临，却道时时为一刻，朝暮都有成"
+    },
+    "expertise:5:caption": {
+      "text": "冬膳仍如常，年年一味已尝遍，今朝换新香"
+    },
+    "expertise:6:caption": {
+      "text": "春风渡南北，幽歌遗景皆入卷，万象俱往来"
+    },
+    "expertise:7:caption": {
+      "text": "枫叶映数言，寥寥几字添幽寂，一纸落花泪"
+    },
+    "news:0:title": {
+      "text": "2026第三季度 更新内容"
+    },
+    "news:1:title": {
+      "text": "2026 TEACON展会 "
+    },
+    "news:1:body": {
+      "text": "织影落花第一次参加的MOD展示活动，看看都有什么吧"
+    },
+    "news:0:meta:1": {
+      "y": "46",
+      "positionMode": "free"
+    },
+    "news:2:title": {
+      "text": "概念：雅韵与禅宗"
+    },
+    "news:2:body": {
+      "text": "织影落花制作组成员告诉您公家理念和武家理念的异同"
+    },
+    "download:h2:0": {
+      "fontSize": "109",
+      "align": "left",
+      "positionMode": "flow"
+    },
+    "showreel:img:0": {
+      "text": "123"
+    },
+    "site-header:a:3": {
+      "href": "./index.html#about",
+      "text": "团队介绍"
+    },
+    "site-header:a:4": {
+      "href": "./index.html#research",
+      "text": "未来更新"
+    },
+    "site-header:a:2": {
+      "text": "Mod概览"
+    },
+    "site-header:a:1": {
+      "text": "Mod新闻"
+    }
+  },
+  "customElements": [
+    {
+      "id": "custom-mtc42wmm",
+      "type": "heading",
+      "section": "top",
+      "text": "新标题",
+      "href": "#",
+      "src": "assets/feature-ecology.png"
+    }
+  ],
+  "homeLinks": {
+    "news:1:cta": "page-world-systems",
+    "news:0:cta": "page-mtiu1mqy"
+  },
+  "pages": [
+    {
+      "id": "page-world-systems",
+      "slug": "2026-teacon",
+      "navLabel": "2026 TeaCon展会",
+      "eyebrow": "2026TeaCon",
+      "title": "2026 TeaCon 展会\n织影落花 的 初次见面",
+      "summary": "在2026年的最后一个季度，我们终于要向大家展示《织影落花集》了......",
+      "contentTitle": "《织影落花集·九月》—— 远在远方的风",
+      "body": "织影落花Mod在2026年第四季度的TeaCon展览会[1]上首次亮相，看看在这次展览会上我们有什么点值得大家记住吧：\n\n------\n\n## 一：织影落花Mod在TeaCon的14个展区\n\n在5月到8月的更新中，我们开发了很多物品，在这次TeaCon展览会中，我们将尽数给大家呈现：\n我们在这次展览会中建立了14个展区，分别展示了以下物品：\n\n展区01：【金属展区】\n展示物品：铝，金属锭堆\n\n展区02：【围炉展区】\n展示物品：围炉，铜茶壶，烤肉架\n\n展区03：【瓦片展区】\n展示物品：各色瓦片\n\n展区04：【照明展区】\n展示物品：各类灯具\n\n展区05：【家具展区】\n展示物品：梳妆台，咖啡凳\n\n展区06：【窗格展区】\n展示物品：各色窗格\n\n展区07：【成就展区】\n展示物品：织影落花Mod的成就系统\n\n展区08：【木圆柱展厅】\n展示物品：各类圆木柱\n\n展区09：【蜜柑展区】\n展示物品：蜜柑，蜜柑树\n\n展区10：【清水混凝土展区】\n展示物品：清水混凝土\n\n展区11：【枯山水展区】\n展示物品：枯山水，石山\n\n展区12：【蛤蜊展区】\n展示物品：蛤蜊\n\n展区13：【风铃&添水展示区】\n展示物品：风铃，添水\n\n展区14：【树木&盆景展示区】\n展示物品：樱花树，秋橡树，枫树，银杏，树木相关组件，盆景\n\n------\n\n## 二：织影落花展区的一些幕后小故事\n\n【展区的选址之谜】\n\n实际上一开始在选择展区的时候就想着找边边角角的展区了，因为这样可以有更多的空间发挥（本质建筑玩家群体思维，没有好建筑好空间的展览不是好展览）。\n事实证明当初的顾虑是正确的，甚至还遇到了“这个空间似乎还是有点小”的问题，不过还是妥善解决了。\nMod和Mod之间还是有区别的，织影落花主打的是氛围感，所以会更加的在意空间与环境对整体氛围的塑造，只有创作出氛围，才能更加容易的感受到织影落花的魅力。\n\n【越做越大的展区】\n\n在最后几天，展区面积越来越大，一度到达难以收手的地步，还好最后两天强行压下了展区规划，否则大家看到的展区，估计还会比现在大一倍。\n整个展区分为3条线路，分别是“枯山水线”，“大社线”和“自然线”，最初我们的思路是“不管大家怎么走，最终都会到达展厅一条街进行游览”，但是后面发现一定需要一条线路成为主线，不然游客可能就会走出去了。\n在权衡之下，我们决定把“枯山水线”变成了”主线“，但是依然保留其他两条线通往展厅。\n\n------\n\n## 译注\n\n[1]：Teacon：全名”TeaCon茶会“，是一个力图”源于社区，回归社区“的模组开发展览会。相关链接：https://www.teacon.cn/2026",
+      "heroImage": "assets/uploads/migrated-pages-0-heroimage-1788283442540-2852dd.jpeg",
+      "ctaLabel": "对我们Mod感兴趣吗？点击这里下载",
+      "ctaUrl": "./index.html#download",
+      "published": false
+    },
+    {
+      "id": "page-mtiu1mqy",
+      "slug": "update2026-3",
+      "navLabel": "2026第三季度更新",
+      "eyebrow": "2026第三季度更新",
+      "title": "织影落花 的\n2026年 第三季度 更新",
+      "summary": "看看我们这几个月都做了什么",
+      "contentTitle": "正文标题",
+      "body": "在这里填写完整正文。",
+      "heroImage": "assets/uploads/migrated-pages-1-heroimage-1788283442556-fd0517.jpeg",
+      "ctaLabel": "前往下载",
+      "ctaUrl": "./index.html#download",
+      "published": false
+    },
+    {
+      "id": "page-mtixltw8",
+      "slug": "new-page",
+      "navLabel": "新页面",
+      "eyebrow": "NEW PAGE",
+      "title": "新的故事页面",
+      "summary": "在这里填写页面摘要。",
+      "contentTitle": "正文标题",
+      "body": "在这里填写完整正文。",
+      "heroImage": "assets/uploads/page-new-page-1788283144899-df7103.jpeg",
+      "ctaLabel": "前往下载",
+      "ctaUrl": "./index.html#download",
+      "published": true
+    }
+  ],
+  "heroImage": "assets/uploads/migrated-heroimage-1788283442562-3f9941.jpeg",
+  "aboutImage": "assets/uploads/migrated-aboutimage-1788283442567-f8f214.jpeg",
+  "researchImage": "assets/uploads/migrated-researchimage-1788283442572-2c476b.jpeg",
+  "sustainabilityImage": "assets/uploads/migrated-sustainabilityimage-1788283442577-5fa286.jpeg",
+  "news": [
+    {
+      "tag": "",
+      "date": "",
+      "title": "2026第三季度 更新内容",
+      "body": "看看我们在这几个月内做了什么吧",
+      "image": "assets/uploads/migrated-news-0-image-1788283442583-543036.jpeg"
+    },
+    {
+      "tag": "",
+      "date": "",
+      "title": "2026 TEACON展会",
+      "body": "织影落花第一次参加的MOD展示活动，看看都有什么吧",
+      "image": "assets/uploads/migrated-news-1-image-1788283442590-089015.jpeg"
+    },
+    {
+      "tag": "",
+      "date": "",
+      "title": "概念：雅韵与禅宗",
+      "body": "织影落花制作组成员告诉您公家理念和武家理念的异同",
+      "image": "assets/uploads/migrated-news-2-image-1788283442594-28e371.jpeg"
+    },
+    {
+      "tag": "机制",
+      "date": "2026.07.19",
+      "title": "天气系统进入多人测试",
+      "body": "气压、温度和海拔现在会在服务器间稳定同步。",
+      "image": "assets/uploads/migrated-news-3-image-1788283442597-c8a44b.jpeg"
+    },
+    {
+      "tag": "研究",
+      "date": "2026.07.06",
+      "title": "地热网络的第一张图纸",
+      "body": "能源不是凭空出现，新的生产线需要理解地下热流。",
+      "image": "assets/uploads/migrated-news-4-image-1788283442599-ac003d.jpeg"
+    },
+    {
+      "tag": "发布",
+      "date": "2026.06.22",
+      "title": "V2.3.0：深层矿脉",
+      "body": "六种矿物与一套新的矿井照明系统已加入游戏。",
+      "image": "assets/uploads/migrated-news-5-image-1788283442601-da10c8.jpeg"
+    },
+    {
+      "tag": "社区",
+      "date": "2026.06.10",
+      "title": "与建筑师一起做 Mod",
+      "body": "开放一场关于空间、路径与玩家记忆的线上工作坊。",
+      "image": "assets/uploads/migrated-news-6-image-1788283442604-f93673.jpeg"
+    },
+    {
+      "tag": "系统",
+      "date": "2026.05.26",
+      "title": "可迁移存档实验完成",
+      "body": "跨版本迁移不再抹掉你的世界历史与自定义规则。",
+      "image": "assets/uploads/migrated-news-7-image-1788283442606-dee10b.jpeg"
+    },
+    {
+      "tag": "合作",
+      "date": "2026.05.13",
+      "title": "ASHFALL x 星尘服务器",
+      "body": "首个大型公共服务器开始邀请玩家参与压力测试。",
+      "image": "assets/news-cavern.png"
+    },
+    {
+      "tag": "机制",
+      "date": "2026.04.29",
+      "title": "植物会记住季节",
+      "body": "生态系统现在会根据湿度与玩家行为持续演化。",
+      "image": "assets/feature-ecology.png"
+    },
+    {
+      "tag": "性能",
+      "date": "2026.04.12",
+      "title": "低负载区块缓存上线",
+      "body": "远处的世界更轻，近处的细节仍然完整。",
+      "image": "assets/research-lab.png"
+    },
+    {
+      "tag": "视觉",
+      "date": "2026.03.24",
+      "title": "新的粒子调色板",
+      "body": "火山灰、冰晶与萤光矿物拥有了独立的光照反应。",
+      "image": "assets/feature-machinery.png"
+    },
+    {
+      "tag": "版本",
+      "date": "2026.03.08",
+      "title": "V2.2.0：风暴预警",
+      "body": "新的气象台可以提前四分钟预测雷暴方向。",
+      "image": "assets/feature-weather.png"
+    },
+    {
+      "tag": "研究",
+      "date": "2026.02.16",
+      "title": "多维度能源桥接",
+      "body": "让不同维度的能源系统拥有一致、可读的接口。",
+      "image": "assets/sustainability-world.png"
+    },
+    {
+      "tag": "社区",
+      "date": "2026.01.28",
+      "title": "Mod 开发者日记上线",
+      "body": "每周公开一段真实的调试记录与设计决策。",
+      "image": "assets/about-team.png"
+    },
+    {
+      "tag": "里程碑",
+      "date": "2026.01.09",
+      "title": "累计下载突破 86K",
+      "body": "感谢每一位把世界规则写进自己存档的玩家。",
+      "image": "assets/news-cavern.png"
+    }
+  ],
+  "expertise": [
+    {
+      "title": "宏观 &微观 庭院",
+      "caption": "秋庭收远岫，十载山川归一隅，方寸钠乾坤",
+      "image": "assets/uploads/migrated-news-2-image-1788283442594-28e371.jpeg"
+    },
+    {
+      "title": "自然 & 方块 世界",
+      "caption": "春夏于一庭，四方蜃景一目尽，秋冬尚在外",
+      "image": "assets/uploads/migrated-expertise-1-image-1788283442610-262b3f.jpeg"
+    },
+    {
+      "title": "户外 & 户内 家具",
+      "caption": "陋室细雨闲，方寸忧思添何物，明日定不足",
+      "image": "assets/uploads/migrated-expertise-2-image-1788283442614-1cf44c.jpeg"
+    },
+    {
+      "title": "工具 & 武备 器械",
+      "caption": "夏木正葱茏，巧器妙思点万物，天地霎时庸",
+      "image": "assets/uploads/migrated-pages-1-heroimage-1788283442556-fd0517.jpeg"
+    },
+    {
+      "title": "农业 & 饮食 相关",
+      "caption": "丰收时节临，却道时时为一刻，朝暮都有成",
+      "image": "assets/uploads/migrated-pages-1-heroimage-1788283442556-fd0517.jpeg"
+    },
+    {
+      "title": "茶道 & 酒水 饮品",
+      "caption": "冬膳仍如常，年年一味已尝遍，今朝换新香",
+      "image": "assets/uploads/migrated-pages-1-heroimage-1788283442556-fd0517.jpeg"
+    },
+    {
+      "title": "雅韵 & 禅宗 文化",
+      "caption": "春风渡南北，幽歌遗景皆入卷，万象俱往来",
+      "image": "assets/uploads/migrated-expertise-6-image-1788283442623-760367.jpeg"
+    },
+    {
+      "title": "成就 & 挑战 内容",
+      "caption": "枫叶映数言，寥寥几字添幽寂，一纸落花泪",
+      "image": "assets/uploads/migrated-expertise-7-image-1788283442628-7a43a5.jpeg"
+    }
+  ]
+}

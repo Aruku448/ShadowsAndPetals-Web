@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "ashfall-home-config-v2";
+  const DEFAULT_CONFIG_URL = "./config/ashfall-home-config.json";
   const MAX_HISTORY = 40;
   const MAX_SOURCE_IMAGE_BYTES = 25 * 1024 * 1024;
   const MAX_STORED_IMAGE_BYTES = 600 * 1024;
@@ -121,7 +122,26 @@
   }
 
   let state;
-  try { state = mergeConfig(JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || {}); } catch { state = clone(defaults); }
+  let hasStoredConfig = false;
+  try {
+    const storedConfig = localStorage.getItem(STORAGE_KEY);
+    hasStoredConfig = Boolean(storedConfig);
+    state = mergeConfig(JSON.parse(storedConfig || "null") || {});
+  } catch {
+    state = clone(defaults);
+  }
+
+  async function loadBundledConfig() {
+    if (hasStoredConfig || location.protocol === "file:") return false;
+    try {
+      const response = await fetch(DEFAULT_CONFIG_URL, { cache: "no-store" });
+      if (!response.ok) return false;
+      state = mergeConfig(await response.json());
+      return true;
+    } catch {
+      return false;
+    }
+  }
   let past = [];
   let future = [];
   let interactionStart = null;
@@ -761,11 +781,19 @@
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") { if ($(".menu-layer").classList.contains("is-open")) $(".menu-close").click(); else if ($(".search-layer").classList.contains("is-open")) $(".search-close").click(); else if (document.body.classList.contains("editor-open")) toggleEditor(false); } if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && document.body.classList.contains("editor-open")) { event.preventDefault(); (event.shiftKey ? $(".redo-button") : $(".undo-button")).click(); } });
 
   function observeReveals() { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), { threshold: .08 }); $$(".reveal, .reveal-card, .media-reveal").forEach((element) => observer.observe(element)); }
-  revealHeroMedia($(".hero-media"));
-  if (window.lucide) window.lucide.createIcons();
-  syncElementScopes();
-  render(); observeReveals(); revealInViewport();
-  migrateEmbeddedImages();
-  document.body.classList.add("page-ready");
-  const params = new URLSearchParams(location.search); if (params.get("edit") === "1") toggleEditor(true); if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
+  async function bootstrap() {
+    const loadedBundledConfig = await loadBundledConfig();
+    if (loadedBundledConfig) {
+      viewPageId = initialPageSlug ? state.pages.find((page) => page.slug === initialPageSlug)?.id || "missing" : null;
+      activePageId = viewPageId && viewPageId !== "missing" ? viewPageId : state.pages[0]?.id || null;
+    }
+    revealHeroMedia($(".hero-media"));
+    if (window.lucide) window.lucide.createIcons();
+    syncElementScopes();
+    render(); observeReveals(); revealInViewport();
+    migrateEmbeddedImages();
+    document.body.classList.add("page-ready");
+    const params = new URLSearchParams(location.search); if (params.get("edit") === "1") toggleEditor(true); if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
+  }
+  bootstrap();
 })();
