@@ -683,9 +683,29 @@
   $$('[data-color]').forEach((button) => button.addEventListener("click", () => { const previous = clone(state); state.accent = button.dataset.color; remember(previous); render(); saveState(); }));
 
   function resizeImage(file) { return new Promise((resolve, reject) => { if (file.size > MAX_SOURCE_IMAGE_BYTES) { reject(new Error("source-too-large")); return; } const reader = new FileReader(); reader.onerror = reject; reader.onload = () => { const image = new Image(); image.onload = () => { let ratio = Math.min(1, 1920 / image.width, 1200 / image.height); let quality = .82; let result = ""; for (let attempt = 0; attempt < 12; attempt += 1) { const canvas = document.createElement("canvas"); canvas.width = Math.max(1, Math.round(image.width * ratio)); canvas.height = Math.max(1, Math.round(image.height * ratio)); canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height); result = canvas.toDataURL("image/jpeg", quality); const bytes = Math.ceil((result.length - result.indexOf(",") - 1) * .75); if (bytes <= MAX_STORED_IMAGE_BYTES) break; if (quality > .58) quality -= .08; else { ratio *= .82; quality = .72; } } resolve(result); }; image.onerror = reject; image.src = reader.result; }; reader.readAsDataURL(file); }); }
-  $("[data-page-image]")?.addEventListener("change", async (event) => { const file = event.target.files?.[0]; const page = selectedPage(); if (!file || !page) return; try { const previous = clone(state); page.heroImage = await resizeImage(file); render(); if (!saveState()) { state = previous; render(); } else { remember(previous); showToast("子页头图已压缩并替换"); } } catch (error) { showToast(error.message === "source-too-large" ? "原图不能超过 25 MB" : "无法读取这张图片"); } event.target.value = ""; });
-  $$('[data-image-upload]').forEach((input) => input.addEventListener("change", async () => { const file = input.files?.[0]; if (!file) return; try { const previous = clone(state); state[input.dataset.imageUpload] = await resizeImage(file); render(); if (!saveState()) { state = previous; render(); } else { remember(previous); showToast("图片已压缩并替换"); } } catch (error) { showToast(error.message === "source-too-large" ? "原图不能超过 25 MB" : "无法读取这张图片"); } input.value = ""; }));
-  $$('[data-collection-image]').forEach((input) => input.addEventListener("change", async () => { const file = input.files?.[0]; if (!file) return; try { const previous = clone(state); state[input.dataset.collectionImage][activeCollection[input.dataset.collectionImage]].image = await resizeImage(file); render(); if (!saveState()) { state = previous; render(); } else { remember(previous); showToast("集合图片已压缩并替换"); } } catch (error) { showToast(error.message === "source-too-large" ? "原图不能超过 25 MB" : "无法读取这张图片"); } input.value = ""; }));
+  async function storeImage(file, name) { const data = await resizeImage(file); return storeImageData(data, name); }
+  async function storeImageData(data, name) { if (location.protocol === "file:") throw new Error("server-required"); const response = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, data }) }); if (!response.ok) throw new Error("upload-failed"); return (await response.json()).path; }
+  async function migrateEmbeddedImages() {
+    if (location.protocol === "file:") return;
+    const seen = new Map();
+    const visit = async (value, path, name) => {
+      if (typeof value === "string" && value.startsWith("data:image/")) {
+        if (!seen.has(value)) seen.set(value, await storeImageData(value, name));
+        return seen.get(value);
+      }
+      if (!value || typeof value !== "object") return value;
+      if (Array.isArray(value)) { for (let index = 0; index < value.length; index += 1) value[index] = await visit(value[index], `${path}-${index}`, `${path}-${index}`); return value; }
+      for (const [key, child] of Object.entries(value)) value[key] = await visit(child, `${path}-${key}`, `${path}-${key}`);
+      return value;
+    };
+    const embedded = JSON.stringify(state).match(/data:image\//g);
+    if (!embedded?.length) return;
+    showToast(`正在迁移 ${embedded.length} 张旧图片...`);
+    try { await visit(state, "migrated", "migrated-image"); saveState(); render(); showToast("旧图片已迁移到 assets/uploads"); } catch { showToast("旧图片迁移失败，请检查 npm run dev"); }
+  }
+  $("[data-page-image]")?.addEventListener("change", async (event) => { const file = event.target.files?.[0]; const page = selectedPage(); if (!file || !page) return; try { const previous = clone(state); page.heroImage = await storeImage(file, `page-${page.slug}`); remember(previous); render(); saveState(); showToast("子页头图已上传到 assets/uploads"); } catch (error) { showToast(error.message === "source-too-large" ? "原图不能超过 25 MB" : error.message === "server-required" ? "请先运行 npm run dev，再使用图片上传" : "图片上传失败，请检查本地服务"); } event.target.value = ""; });
+  $$('[data-image-upload]').forEach((input) => input.addEventListener("change", async () => { const file = input.files?.[0]; if (!file) return; try { const previous = clone(state); state[input.dataset.imageUpload] = await storeImage(file, `home-${input.dataset.imageUpload}`); remember(previous); render(); saveState(); showToast("图片已上传到 assets/uploads"); } catch (error) { showToast(error.message === "source-too-large" ? "原图不能超过 25 MB" : error.message === "server-required" ? "请先运行 npm run dev，再使用图片上传" : "图片上传失败，请检查本地服务"); } input.value = ""; }));
+  $$('[data-collection-image]').forEach((input) => input.addEventListener("change", async () => { const file = input.files?.[0]; if (!file) return; try { const previous = clone(state); const type = input.dataset.collectionImage; state[type][activeCollection[type]].image = await storeImage(file, `${type}-${String(activeCollection[type] + 1).padStart(2, "0")}`); remember(previous); render(); saveState(); showToast("集合图片已上传到 assets/uploads"); } catch (error) { showToast(error.message === "source-too-large" ? "原图不能超过 25 MB" : error.message === "server-required" ? "请先运行 npm run dev，再使用图片上传" : "图片上传失败，请检查本地服务"); } input.value = ""; }));
   $(".export-button").addEventListener("click", () => { const url = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = "ashfall-home-config.json"; link.click(); URL.revokeObjectURL(url); showToast("配置已导出"); });
   $(".import-button input").addEventListener("change", async (event) => { try { const previous = clone(state); state = mergeConfig(JSON.parse(await event.target.files[0].text())); remember(previous); render(); saveState(); showToast("配置已导入"); } catch { showToast("配置文件格式不正确"); } event.target.value = ""; });
   $(".reset-button").addEventListener("click", () => { const previous = clone(state); state = clone(defaults); remember(previous); render(); saveState(); showToast("已恢复示例内容，可撤销"); });
@@ -745,6 +765,7 @@
   if (window.lucide) window.lucide.createIcons();
   syncElementScopes();
   render(); observeReveals(); revealInViewport();
+  migrateEmbeddedImages();
   document.body.classList.add("page-ready");
   const params = new URLSearchParams(location.search); if (params.get("edit") === "1") toggleEditor(true); if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
 })();

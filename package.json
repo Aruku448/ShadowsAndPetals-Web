@@ -4,7 +4,7 @@
   "private": true,
   "description": "A configurable editorial showcase for a Minecraft mod.",
   "scripts": {
-    "dev": "python3 -m http.server 8088",
+    "dev": "node server.js",
     "check": "node --check app.js"
   },
   "dependencies": {

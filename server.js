@@ -1,0 +1,13 @@
+const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
+const root = __dirname;
+const uploadDir = path.join(root, "assets", "uploads");
+const port = Number(process.env.PORT || 8088);
+const mime = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" };
+const safeName = (value) => String(value || "upload").toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "upload";
+const send = (res, status, body, type = "application/json; charset=utf-8") => { res.writeHead(status, { "Content-Type": type, "Cache-Control": "no-store" }); res.end(body); };
+function serve(req, res) { const pathname = decodeURIComponent(new URL(req.url, `http://${req.headers.host}`).pathname); const file = path.resolve(root, pathname === "/" ? "index.html" : pathname.slice(1)); if (!file.startsWith(`${root}${path.sep}`)) return send(res, 403, "Forbidden", "text/plain"); fs.stat(file, (err, info) => { if (err || !info.isFile()) return send(res, 404, "Not found", "text/plain"); res.writeHead(200, { "Content-Type": mime[path.extname(file).toLowerCase()] || "application/octet-stream" }); fs.createReadStream(file).pipe(res); }); }
+function upload(req, res) { let raw = ""; req.on("data", (chunk) => { raw += chunk; if (raw.length > 1_100_000) req.destroy(); }); req.on("end", () => { try { const input = JSON.parse(raw); const match = String(input.data || "").match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/); if (!match) return send(res, 400, JSON.stringify({ error: "invalid-image" })); const buffer = Buffer.from(match[2], "base64"); if (buffer.length > 700 * 1024) return send(res, 413, JSON.stringify({ error: "image-too-large" })); fs.mkdirSync(uploadDir, { recursive: true }); const extension = match[1] === "jpg" ? "jpg" : match[1]; const name = `${safeName(input.name)}-${Date.now()}-${crypto.randomBytes(3).toString("hex")}.${extension}`; fs.writeFileSync(path.join(uploadDir, name), buffer, { flag: "wx" }); send(res, 201, JSON.stringify({ path: `assets/uploads/${name}`, bytes: buffer.length })); } catch { send(res, 400, JSON.stringify({ error: "invalid-payload" })); } }); }
+http.createServer((req, res) => { if (req.method === "POST" && req.url === "/api/upload") return upload(req, res); if (req.method === "GET" || req.method === "HEAD") return serve(req, res); send(res, 405, JSON.stringify({ error: "method-not-allowed" })); }).listen(port, () => console.log(`ASH/FALL dev server: http://localhost:${port}`));

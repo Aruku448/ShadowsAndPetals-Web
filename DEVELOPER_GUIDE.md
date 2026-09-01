@@ -10,7 +10,7 @@
 - 位图素材：`assets/`
 - 依赖：`package.json`
 - 语法检查：`npm run check`
-- 本地服务：`npm run dev`，默认端口见 `package.json`
+- 本地服务：`npm run dev`，默认端口见 `package.json`。该服务同时提供图片上传接口，不要用 `file://` 打开页面来上传图片。
 
 修改后至少运行 `npm run check`。涉及布局、交互、编辑器或动效时，还要在浏览器中打开页面并验证对应流程。
 
@@ -143,6 +143,12 @@
 - 在 `mergeConfig()` 中补默认值和迁移逻辑。
 - 保证旧的 `elementStyles`、`news`、`expertise` 不丢失。
 - 用编辑器修改一项内容，刷新页面，确认值仍存在。
+
+### 图片与 Git 存储
+
+编辑器上传图片必须通过 `npm run dev` 提供的 `POST /api/upload`；服务器会将压缩后的图片写入 `assets/uploads/`，并根据用途生成可识别的文件名，例如 `page-world-systems-...jpg` 或 `news-01-...jpg`。`state` 只保存这个相对路径，不再把 Base64 图片写进 `localStorage`。上传后应检查 `git status`，并将 `assets/uploads/` 中需要发布的图片一并提交。
+
+生产环境使用图床时，不要让静态网页直接携带图床密钥或调用 GitHub 写入接口。将图床返回的公开 HTTPS 地址填入图片字段（或在导入 JSON 中写入该地址）即可；`render()` 会原样设置图片 `src`。这样开发环境使用仓库内相对路径，发布环境使用图床 URL，两者无需修改渲染逻辑。
 
 ## 发布为面向用户的网页
 
