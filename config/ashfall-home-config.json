@@ -17,7 +17,7 @@
   "researchTitle": "花开花落\n总会再有一年",
   "researchBody": "织影落花模组的终点\n无论什么时候问我们\n答案永远会是“明年”\n那么我们在这一年又会做些什么？\n\n",
   "sustainabilityTitle": "我们需要您的反馈",
-  "sustainabilityBody": "从低负载世界生成到可迁移存档，我们把性能、兼容性与长期更新纳入每一项系统设计。",
+  "sustainabilityBody": "诚邀您与我们\n一起完善\n《织影落花集》",
   "downloadTitle": "诚邀您\n翻开我们这本\n《织影落花集》",
   "downloadLabel": "下载 V2.4.0",
   "downloadUrl": "#",
@@ -27,9 +27,9 @@
   "accent": "#FF5A36",
   "heroShade": "29",
   "heroFocus": 52,
-  "textureGrain": "0",
-  "mediaHighlight": "0",
-  "glassOpacity": "23",
+  "textureGrain": "1",
+  "mediaHighlight": "7",
+  "glassOpacity": "31",
   "editorOpacity": "100",
   "elementStyles": {
     "id:manifesto": {
@@ -71,11 +71,11 @@
     },
     "news:h2:0": {
       "positionMode": "flow",
-      "width": "136",
+      "width": "93",
       "x": "22",
-      "align": "stretch",
-      "height": "126",
-      "translateY": "19",
+      "align": "left",
+      "height": "166",
+      "translateY": "17",
       "color": "#c9b603",
       "y": "40",
       "fontSize": "76"
@@ -195,9 +195,11 @@
       "text": "织影落花制作组成员告诉您公家理念和武家理念的异同"
     },
     "download:h2:0": {
-      "fontSize": "109",
-      "align": "left",
-      "positionMode": "flow"
+      "fontSize": "130",
+      "align": "stretch",
+      "positionMode": "flow",
+      "width": "44",
+      "zIndex": "5"
     },
     "showreel:img:0": {
       "text": "123"
@@ -215,6 +217,26 @@
     },
     "site-header:a:1": {
       "text": "Mod新闻"
+    },
+    "footer:a:12": {
+      "text": "Ria wiki"
+    },
+    "footer:a:11": {
+      "href": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon"
+    },
+    "showreel:div:0": {
+      "text": " "
+    },
+    "footer:p:0": {
+      "text": "烧烤金鱼team 制作"
+    },
+    "page:page-mtiu1mqy:page-next:p:0": {
+      "positionMode": "flow",
+      "align": "center"
+    },
+    "page:page-mtjjlqg5:page-next:a:0": {
+      "align": "left",
+      "positionMode": "flow"
     }
   },
   "customElements": [
@@ -230,7 +252,10 @@
   "homeLinks": {
     "news:1:cta": "page-world-systems",
     "news:0:cta": "page-mtiu1mqy",
-    "news:2:cta": "page-mtjjlqg5"
+    "news:2:cta": "page-mtjjlqg5",
+    "about:a:1": "page-mtkh3cix",
+    "sustainability:img:0": "page-mtixltw8",
+    "sustainability:a:0": "page-mtixltw8"
   },
   "pages": [
     {
@@ -256,7 +281,7 @@
       "summary": "看看我们这几个月都做了什么",
       "contentTitle": "《织影落花集·方今之时》—— 万象更新夏日雨",
       "body": "第三季度对于织影落花来说是名副其实的“从零到一的突破”，我们从正式的立项到开发，再到第一次写下这篇更新概览......这一切如梦似幻，但是不断扩充的Mod物品却又告诉我们这里依然是真实的人间。\n\n方今之时，九月初至，我们也第一次为大家介绍这几个月我们的更新，还望大家喜欢：\n\n------\n\n> 【宏观 & 微观 庭院】相关更新：\n\n\t- 风铃 更新\n\t\t- 添水，添水竹管 更新\n\t\t- 枯山水纹路 更新\n\t\t- 各种石山 更新\n\t- 盆栽，盆景系统 更新\n\n> 【自然 & 方块 世界】相关更新：\n\n\t- 矾土矿石，深层矾土矿石，粗矾土，粗矾土快 更新\n\t\t- 铝锭，铝块 更新\n\t\t- 铝锭堆，银锭堆，铜锭堆，金锭堆，下界合金锭堆 更新\n\t- 清水混凝土 更新\n\t- 各色瓦，各色瓦台阶，各色瓦竖直台阶，各色瓦楼梯 更新\n\t\t- 银杏树，枫树，樱树，秋橡树 及其相关衍生方块 更新\n\t\t- 银杏树，枫树，樱树，秋橡树 树叶，树叶半砖，树叶竖直半砖，树叶台阶 更新\n\t\t- 各材质木柱 更新\n\t\t- 各材质木圆柱 更新\n\t\t- 各材质窗格 更新\n\n> 【户外 & 户内 家具】相关更新：\n\n\t- 日式围炉 更新\n\t\t- 卧室台灯，壁灯，防爆灯，嵌灯，台灯 更新\n\t\t- 各材质梳妆台 更新\n\t\t- 各色咖啡椅 更新\n\n> 【工具 & 武备 器械】相关更新：\n\n\t- 凿子，锤子 更新\n\t\t- 耙子 更新\n\n> 【农业 & 饮食 相关】相关更新：\n\n\t- 蜜柑，蜜柑种子 更新\n\t\t- 蛤蜊 更新\n\n> 【茶道 & 酒水 饮品】相关更新：\n\n\t- 茶桶 更新\n\t\t- 铜茶壶 更新\n\n> 【雅韵 & 禅宗 文化】相关更新：\n\n\t- 暂无相关更新\n\n> 【成就 & 挑战 内容】相关更新：\n\t\t\n\t\t- 成就系统 更新\n\t\t- 挑战系统 更新\n\n------\n\n## 以上分类可能以后会有改动，希望大家能够理解，感谢感谢\n\n2026.9.2",
-      "heroImage": "assets/uploads/page-update2026-3-1788288323768-32bbab.jpeg",
+      "heroImage": "assets/uploads/page-update2026-3-1788390466824-628572.jpeg",
       "ctaLabel": "前往下载",
       "ctaUrl": "./index.html#download",
       "published": false
@@ -268,9 +293,9 @@
       "eyebrow": "联系我们",
       "title": "诚邀您与我们一起完善\n《织影落花集》",
       "summary": "无论是BUG反馈，还是灵感提议，我们都欢迎",
-      "contentTitle": "正文标题",
-      "body": "在这里填写完整正文。",
-      "heroImage": "assets/uploads/page-new-page-1788283144899-df7103.jpeg",
+      "contentTitle": "《织影落花集·反馈》",
+      "body": "如果大家遇到了如下情况：\n\n①：为什么我和我的朋友看不懂这一段文本表达了什么意思？\n\n②：为什么我使用正确的版本却进入不了？\n\n③：为什么织影落花Mod和其他Mod出现了冲突？\n\n④：我想给织影落花制作组提一些自己的想法！\n\n⑤：纯粹当倾诉树洞\n\n等等诸如此类的问题......\n\n都可以联系我们，我们会尽量为您解答：\n\n联系邮箱地址：xxxxxxxxxxx\n\n织影落花项目组",
+      "heroImage": "assets/uploads/page-contactus-1788389570499-9b53c2.jpeg",
       "ctaLabel": "前往下载",
       "ctaUrl": "./index.html#download",
       "published": true
@@ -280,11 +305,25 @@
       "slug": "academic-jhana",
       "navLabel": "概念：雅韵与禅宗文化",
       "eyebrow": "概念：雅韵与禅宗",
-      "title": "123",
-      "summary": "123",
+      "title": "概念：雅韵与禅宗文化",
+      "summary": "雅韵与禅宗，代表着日本公家与武家的核心区别",
+      "contentTitle": "《织影落花集·公武》—— 公家的雅武家的禅",
+      "body": "作者：织影落花制作组\n\n【用最通俗的话语，讲述复杂的文化脉络，体验真正的织影落花】\n【怕死的声明：本文只会讲述明治维新前的日本】\n【《概念》类文章更多的是对日本在近现代文化思想的一种“祛魅”，希望大家喜欢】\n\n提到“日本传统文化”，很多人估计都会想到日本作家大西克里所写的《物哀》，《幽玄》，《侘寂》三本书，这三本书系统性的剖析了日本人从物质到精神上的思想体系，也是很多人了解日本文化的来源之一。\n\n但是，随着近年来日本文化的“真实性考究”越来越多，很多我们曾经笃信的风花雪月都被剥除了华丽的宣传外衣。在这其中，“物哀，幽玄，侘寂”也被严肃的批判。\n\n因为在研究中，日本历史学家发现，这三个概念实际上是20世纪后半叶才逐渐被日本人创造出来的，也就是说，在研究日本历史的时候如果带入了这三个概念，很容易会对当时的日本人精神思想体系产生错误的认知，这明显就不合适啦。\n\n所以，我们选择从历史上真正出现过的两个词汇：“雅韵”，“禅宗”，来讲述当时的日本贵族们到底在思考着什么。\n\n------\n\n【“公家”和“武家”分别是什么？】\n\n要理解这两个词，首先要知道“公家”和“武家”分别在日本历史中扮演什么样的角色。\n\n公家（Kuge）\n\n“公家”并不等于传统意义上的“贵族群体”，在这点上他们的定义非常狭隘：仅仅指“围绕京都进行身份活动的人群”，在平安时代，公家对于整个日本（不包括阿伊努人等原住民群体）的控制极为强大。\n\n但是随着土地越来越大，这帮“公家”管理人员很难管理到偏远地区的治安和土地纠纷。于是他们派遣了许多地方豪族和小军事集团到这些地方进行管理。\n\n武家（buke）\n\n随着时间发展，一些地方豪族和军事集团便开始思考一个问题：“为什么我们还要听京都那些公家的？”\n\n于是发生了一些经典的事件，日本来到了有名的“幕府时代”。\n\n但是这些“武家”遇到了非常棘手的问题：日本在这段时间和中国历史上的春秋时期很像，讲究的是“名义合理性”，这些“公家”与天皇的关系绑定了百年，如果直接赶尽杀绝，那么“武家”的名义合理性就几乎站不住脚。\n\n同时，这些“武家”并没有足够的话语权和控制能力，在这方面仍然需要“公家“的帮助。\n\n所以呢，就出现了：在实质性上的地方管理中，”武家“拥有绝对的话语权，而这些”武家“的话语权则需要”公家“授予官职提供。这是一种极度微妙的平衡，在这当中两方也在不断地融合。\n\n（不过后续的事情并不是本文的重点，这里就不赘述了）\n\n⭐⭐ 总的来说，用春秋时代来理解”公家“和”武家“是十分合适的：”公家“就是周天子周围的那帮大臣，而”武家“则是各个诸侯国。\n\n------\n\n【雅韵：时间的记忆】\n\n⭐⭐ ”雅韵“从来不是单纯的”优雅“，它代表的是一系列的规章制度和秩序规范。\n\n譬如：一个人在正确的地点说正确的话，做正确的动作和正确的肢体语言，同时在正确的时间产生正确的情感......这个就是【雅韵】\n\n（不得不说，这不就是现在经常说的”规则怪谈“，”读空气“吗？看来果然可以追本溯源）\n\n同时，”雅韵“还代表着对历史文化的传承，”我们的大脑里装着的是几百年来的历史文化“，是很多公家成员的基本素养。\n\n由于”雅韵“，公家成员们不断地引用千百年来的诗词歌赋，一轮普通的圆月，他们能够找出几十种甚至几百种不同的“历史文学引用”，再通过这些引用，融合成了新的理念。\n\n------\n\n【禅宗：雅韵的对板】\n\n在很多讲述日本文化的书籍中，都会提到一个点：“武家之所以支持禅宗，是因为爱好其中的“生死观”，能够让武士们看淡生死”。\n\n但是，这种说法，是❗完全错误❗的。\n\n当武家团体建立幕府的时候，他们面临的第一个问题，便是“权威”。（没有权威，大家反而会更亲近公家，没人会听从武家的命令）\n\n所以，武家团体最需要的，则是寻找一个“不仅与公家的“雅”文化完全不同，而且也要在当时的日本有一定的流传度”的文化，从而形成自己的“权威”，和公家叫板。\n\n于是，他们看中了刚刚从中国传来的先进“禅”文化。在镰仓幕府时期，各地武家投资寺庙，促进了日本社会对南宋文化的强烈兴趣和模仿。\n\n⭐⭐ 总的来说，武家支持“禅宗”，很大程度上为了和文家的“雅韵”对板。为了和“传统 & 本土”的“雅韵”文化对板。他们接受了“先进 & 异国”的“禅宗”文化。\n",
+      "heroImage": "assets/uploads/page-academic-jhana-1788389513199-ae295e.jpeg",
+      "ctaLabel": "前往下载",
+      "ctaUrl": "./index.html#download",
+      "published": false
+    },
+    {
+      "id": "page-mtkh3cix",
+      "slug": "memberlist",
+      "navLabel": "开发组制作成员",
+      "eyebrow": "织影落花制作组成员",
+      "title": "《织影落花集》\n的作者们",
+      "summary": "都是谁在给织影落花Mod添砖加瓦呢？",
       "contentTitle": "正文标题",
       "body": "在这里填写完整正文。",
-      "heroImage": "assets/feature-weather.png",
+      "heroImage": "assets/uploads/page-memberlist-1788390302970-f52cb7.jpeg",
       "ctaLabel": "前往下载",
       "ctaUrl": "./index.html#download",
       "published": false
@@ -317,102 +356,102 @@
       "image": "assets/uploads/migrated-news-2-image-1788283442594-28e371.jpeg"
     },
     {
-      "tag": "机制",
+      "tag": "敬情期待4",
       "date": "2026.07.19",
-      "title": "天气系统进入多人测试",
-      "body": "气压、温度和海拔现在会在服务器间稳定同步。",
+      "title": "敬请期待",
+      "body": "尽情期待",
       "image": "assets/uploads/migrated-news-3-image-1788283442597-c8a44b.jpeg"
     },
     {
-      "tag": "研究",
+      "tag": "敬请期待5",
       "date": "2026.07.06",
-      "title": "地热网络的第一张图纸",
-      "body": "能源不是凭空出现，新的生产线需要理解地下热流。",
+      "title": "敬请期待",
+      "body": "敬请期待",
       "image": "assets/uploads/migrated-news-4-image-1788283442599-ac003d.jpeg"
     },
     {
-      "tag": "发布",
+      "tag": "敬请期待6",
       "date": "2026.06.22",
-      "title": "V2.3.0：深层矿脉",
-      "body": "六种矿物与一套新的矿井照明系统已加入游戏。",
+      "title": "敬请期待",
+      "body": "敬请期待",
       "image": "assets/uploads/migrated-news-5-image-1788283442601-da10c8.jpeg"
     },
     {
-      "tag": "社区",
+      "tag": "敬请期待7",
       "date": "2026.06.10",
-      "title": "与建筑师一起做 Mod",
-      "body": "开放一场关于空间、路径与玩家记忆的线上工作坊。",
+      "title": "敬请期待",
+      "body": "敬请期待",
       "image": "assets/uploads/migrated-news-6-image-1788283442604-f93673.jpeg"
     },
     {
-      "tag": "系统",
+      "tag": "敬请期待8",
       "date": "2026.05.26",
-      "title": "可迁移存档实验完成",
-      "body": "跨版本迁移不再抹掉你的世界历史与自定义规则。",
+      "title": "敬请期待",
+      "body": "敬请期待",
       "image": "assets/uploads/migrated-news-7-image-1788283442606-dee10b.jpeg"
     },
     {
-      "tag": "合作",
+      "tag": "敬请期待9",
       "date": "2026.05.13",
-      "title": "ASHFALL x 星尘服务器",
-      "body": "首个大型公共服务器开始邀请玩家参与压力测试。",
-      "image": "assets/news-cavern.png"
+      "title": "敬请期待",
+      "body": "敬请期待",
+      "image": "assets/uploads/news-09-1788390578764-6a87e7.jpeg"
     },
     {
-      "tag": "机制",
+      "tag": "敬请期待10",
       "date": "2026.04.29",
-      "title": "植物会记住季节",
-      "body": "生态系统现在会根据湿度与玩家行为持续演化。",
-      "image": "assets/feature-ecology.png"
+      "title": "敬请期待",
+      "body": "敬请期待",
+      "image": "assets/uploads/news-10-1788390788208-efb508.jpeg"
     },
     {
-      "tag": "性能",
+      "tag": "敬请期待11",
       "date": "2026.04.12",
-      "title": "低负载区块缓存上线",
-      "body": "远处的世界更轻，近处的细节仍然完整。",
-      "image": "assets/research-lab.png"
+      "title": "敬请期待",
+      "body": "敬请期待",
+      "image": "assets/uploads/news-11-1788390803360-34a535.jpeg"
     },
     {
-      "tag": "视觉",
+      "tag": "敬请期待12",
       "date": "2026.03.24",
-      "title": "新的粒子调色板",
-      "body": "火山灰、冰晶与萤光矿物拥有了独立的光照反应。",
-      "image": "assets/feature-machinery.png"
+      "title": "敬请期待",
+      "body": "敬请期待。",
+      "image": "assets/uploads/news-12-1788390814353-84f859.jpeg"
     },
     {
-      "tag": "版本",
+      "tag": "敬请期待13",
       "date": "2026.03.08",
-      "title": "V2.2.0：风暴预警",
-      "body": "新的气象台可以提前四分钟预测雷暴方向。",
-      "image": "assets/feature-weather.png"
+      "title": "敬请期待",
+      "body": "敬请期待",
+      "image": "assets/uploads/news-13-1788390827651-017294.jpeg"
     },
     {
-      "tag": "研究",
+      "tag": "敬请期待14",
       "date": "2026.02.16",
-      "title": "多维度能源桥接",
-      "body": "让不同维度的能源系统拥有一致、可读的接口。",
-      "image": "assets/sustainability-world.png"
+      "title": "敬请期待",
+      "body": "敬请期待",
+      "image": "assets/uploads/news-14-1788390912965-e9ae71.jpeg"
     },
     {
-      "tag": "社区",
+      "tag": "敬请期待15",
       "date": "2026.01.28",
-      "title": "Mod 开发者日记上线",
-      "body": "每周公开一段真实的调试记录与设计决策。",
-      "image": "assets/about-team.png"
+      "title": "敬请期待",
+      "body": "敬请期待",
+      "image": "assets/uploads/news-15-1788390921998-b894d7.jpeg"
     },
     {
-      "tag": "里程碑",
+      "tag": "敬请期待16",
       "date": "2026.01.09",
-      "title": "累计下载突破 86K",
-      "body": "感谢每一位把世界规则写进自己存档的玩家。",
-      "image": "assets/news-cavern.png"
+      "title": "敬请期待",
+      "body": "敬请期待",
+      "image": "assets/uploads/news-16-1788390970279-8636bf.jpeg"
     }
   ],
   "expertise": [
     {
       "title": "宏观 &微观 庭院",
       "caption": "秋庭收远岫，十载山川归一隅，方寸钠乾坤",
-      "image": "assets/uploads/migrated-news-2-image-1788283442594-28e371.jpeg"
+      "image": "assets/uploads/expertise-01-1788390749362-e40a02.jpeg"
     },
     {
       "title": "自然 & 方块 世界",
@@ -449,5 +488,9 @@
       "caption": "枫叶映数言，寥寥几字添幽寂，一纸落花泪",
       "image": "assets/uploads/migrated-expertise-7-image-1788283442628-7a43a5.jpeg"
     }
-  ]
+  ],
+  "configMeta": {
+    "revision": 1,
+    "updatedAt": "2026-09-03 07:24"
+  }
 }
