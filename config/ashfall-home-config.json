@@ -229,7 +229,8 @@
   ],
   "homeLinks": {
     "news:1:cta": "page-world-systems",
-    "news:0:cta": "page-mtiu1mqy"
+    "news:0:cta": "page-mtiu1mqy",
+    "news:2:cta": "page-mtjjlqg5"
   },
   "pages": [
     {
@@ -253,26 +254,40 @@
       "eyebrow": "2026第三季度更新",
       "title": "织影落花 的\n2026年 第三季度 更新",
       "summary": "看看我们这几个月都做了什么",
-      "contentTitle": "正文标题",
-      "body": "在这里填写完整正文。",
-      "heroImage": "assets/uploads/migrated-pages-1-heroimage-1788283442556-fd0517.jpeg",
+      "contentTitle": "《织影落花集·方今之时》—— 万象更新夏日雨",
+      "body": "第三季度对于织影落花来说是名副其实的“从零到一的突破”，我们从正式的立项到开发，再到第一次写下这篇更新概览......这一切如梦似幻，但是不断扩充的Mod物品却又告诉我们这里依然是真实的人间。\n\n方今之时，九月初至，我们也第一次为大家介绍这几个月我们的更新，还望大家喜欢：\n\n------\n\n> 【宏观 & 微观 庭院】相关更新：\n\n\t- 风铃 更新\n\t\t- 添水，添水竹管 更新\n\t\t- 枯山水纹路 更新\n\t\t- 各种石山 更新\n\t- 盆栽，盆景系统 更新\n\n> 【自然 & 方块 世界】相关更新：\n\n\t- 矾土矿石，深层矾土矿石，粗矾土，粗矾土快 更新\n\t\t- 铝锭，铝块 更新\n\t\t- 铝锭堆，银锭堆，铜锭堆，金锭堆，下界合金锭堆 更新\n\t- 清水混凝土 更新\n\t- 各色瓦，各色瓦台阶，各色瓦竖直台阶，各色瓦楼梯 更新\n\t\t- 银杏树，枫树，樱树，秋橡树 及其相关衍生方块 更新\n\t\t- 银杏树，枫树，樱树，秋橡树 树叶，树叶半砖，树叶竖直半砖，树叶台阶 更新\n\t\t- 各材质木柱 更新\n\t\t- 各材质木圆柱 更新\n\t\t- 各材质窗格 更新\n\n> 【户外 & 户内 家具】相关更新：\n\n\t- 日式围炉 更新\n\t\t- 卧室台灯，壁灯，防爆灯，嵌灯，台灯 更新\n\t\t- 各材质梳妆台 更新\n\t\t- 各色咖啡椅 更新\n\n> 【工具 & 武备 器械】相关更新：\n\n\t- 凿子，锤子 更新\n\t\t- 耙子 更新\n\n> 【农业 & 饮食 相关】相关更新：\n\n\t- 蜜柑，蜜柑种子 更新\n\t\t- 蛤蜊 更新\n\n> 【茶道 & 酒水 饮品】相关更新：\n\n\t- 茶桶 更新\n\t\t- 铜茶壶 更新\n\n> 【雅韵 & 禅宗 文化】相关更新：\n\n\t- 暂无相关更新\n\n> 【成就 & 挑战 内容】相关更新：\n\t\t\n\t\t- 成就系统 更新\n\t\t- 挑战系统 更新\n\n------\n\n## 以上分类可能以后会有改动，希望大家能够理解，感谢感谢\n\n2026.9.2",
+      "heroImage": "assets/uploads/page-update2026-3-1788288323768-32bbab.jpeg",
       "ctaLabel": "前往下载",
       "ctaUrl": "./index.html#download",
       "published": false
     },
     {
       "id": "page-mtixltw8",
-      "slug": "new-page",
-      "navLabel": "新页面",
-      "eyebrow": "NEW PAGE",
-      "title": "新的故事页面",
-      "summary": "在这里填写页面摘要。",
+      "slug": "contactus",
+      "navLabel": "联系我们",
+      "eyebrow": "联系我们",
+      "title": "诚邀您与我们一起完善\n《织影落花集》",
+      "summary": "无论是BUG反馈，还是灵感提议，我们都欢迎",
       "contentTitle": "正文标题",
       "body": "在这里填写完整正文。",
       "heroImage": "assets/uploads/page-new-page-1788283144899-df7103.jpeg",
       "ctaLabel": "前往下载",
       "ctaUrl": "./index.html#download",
       "published": true
+    },
+    {
+      "id": "page-mtjjlqg5",
+      "slug": "academic-jhana",
+      "navLabel": "概念：雅韵与禅宗文化",
+      "eyebrow": "概念：雅韵与禅宗",
+      "title": "123",
+      "summary": "123",
+      "contentTitle": "正文标题",
+      "body": "在这里填写完整正文。",
+      "heroImage": "assets/feature-weather.png",
+      "ctaLabel": "前往下载",
+      "ctaUrl": "./index.html#download",
+      "published": false
     }
   ],
   "heroImage": "assets/uploads/migrated-heroimage-1788283442562-3f9941.jpeg",
