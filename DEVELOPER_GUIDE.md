@@ -10,7 +10,7 @@
 - 位图素材：`assets/`
 - 依赖：`package.json`
 - 语法检查：`npm run check`
-- 本地服务：Linux/macOS 使用 `npm run dev`；Windows 可双击项目根目录的 `start-server.bat`。脚本默认使用 8091 端口，也可在命令提示符中用 `set PORT=8092 && npm run dev` 更换端口。该服务同时提供图片上传接口，不要用 `file://` 打开页面来上传图片。首次运行前请安装 Node.js 18 或更新版本。
+- 本地服务：Linux/macOS 使用 `npm run dev`；Windows 可双击项目根目录的 `start-server.bat`。脚本默认使用 8091 端口，也可在命令提示符中用 `set PORT=8092 && npm run dev` 更换端口。该服务同时提供图片上传（`POST /api/upload`）和配置写回（`POST /api/save-config`，编辑器“配置”页签的“保存到 config JSON”按钮）接口，不要用 `file://` 打开页面来上传图片或写回配置。首次运行前请安装 Node.js 18 或更新版本。
 
 ### Windows 安装 Node.js
 
@@ -152,6 +152,16 @@
 ## 保存、导入和导出
 
 本地配置 key 是 `ashfall-home-config-v2`。`saveState()` 在内容或样式变化后写入 `localStorage`；`pagehide` 会再次同步保存。导入时必须经过 `mergeConfig()`，让旧配置补齐新字段，不要直接把导入 JSON 当作完整 state 使用。
+
+### 写回仓库配置与版本标注
+
+编辑器“配置”页签的“保存到 config JSON”按钮会把当前完整 state `POST` 到 `/api/save-config`，由 `server.js` 原子写入 `config/ashfall-home-config.json`（先写临时文件再 `rename`）。写入前 `app.js` 会用 `nextConfigMeta()` 在配置顶部标注：
+
+```json
+"configMeta": { "revision": 12, "updatedAt": "2026-09-03 12:00" }
+```
+
+`revision` 每次保存递增，协作者在 GitHub 上对比该字段即可确认配置更新。`mergeConfig()` 不识别 `configMeta` 时会透传该字段；手动编辑 JSON 可以不写，下次保存时会自动补上。导出 JSON 也带同样的标注，导入后显示在“配置”页签顶部。
 
 修改配置结构时：
 

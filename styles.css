@@ -308,7 +308,7 @@ body.editor-open.element-picker-active { overflow-y: auto; }
   .stats { gap: 9px; }
   .stat strong { font-size: 22px; }
   .stat span { font-size: 10px; }
-  .download h2 { font-size: 41px; }
+  .download h2 { font-size: 57px !important; }
   .download-art { top: 31%; font-size: 113px; }
   .site-footer div { gap: 12px; }
   .editor-header { padding: 20px 17px 15px; }
@@ -381,7 +381,7 @@ body.page-ready .page-loader { opacity: 0; visibility: hidden; pointer-events: n
 .subpage-copy h2 { max-width: 800px; margin: 0 0 50px; font-size: 72px; line-height: .95; letter-spacing: 0; }
 .subpage-copy > p { max-width: clamp(760px, 52vw, 1020px); margin: 0 0 44px; color: #575b54; font-size: 21px; line-height: 1.72; white-space: pre-line; }
 .subpage-next { display: flex; flex-direction: column; justify-content: center; padding: 120px 5.3vw; color: var(--paper); background: var(--ink); }
-.subpage-view > .subpage-next.is-home-return { min-height: clamp(330px, 38vw, 500px); padding-block: clamp(70px, 8vw, 105px); }
+.subpage-view > .subpage-next { min-height: clamp(330px, 38vw, 500px); padding-block: clamp(70px, 8vw, 105px); }
 .subpage-next > p { margin: 0 0 36px; color: #92968d; font-size: 12px; font-weight: 800; text-transform: uppercase; }
 .subpage-next > a { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 18px; border-top: 1px solid rgba(255,255,255,.22); padding-top: 32px; }
 .subpage-next a .subpage-next-meta { grid-column: 1; color: var(--accent); font-size: 12px; font-weight: 800; }
