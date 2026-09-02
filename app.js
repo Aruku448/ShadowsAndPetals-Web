@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "ashfall-home-config-v2";
   const DEFAULT_CONFIG_URL = "./config/ashfall-home-config.json";
+  const isLocalDev = location.protocol === "file:" || ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(location.hostname);
   const MAX_HISTORY = 40;
   const MAX_SOURCE_IMAGE_BYTES = 25 * 1024 * 1024;
   const MAX_STORED_IMAGE_BYTES = 600 * 1024;
@@ -124,7 +125,7 @@
   let state;
   let hasStoredConfig = false;
   try {
-    const storedConfig = localStorage.getItem(STORAGE_KEY);
+    const storedConfig = isLocalDev ? localStorage.getItem(STORAGE_KEY) : null;
     hasStoredConfig = Boolean(storedConfig);
     state = mergeConfig(JSON.parse(storedConfig || "null") || {});
   } catch {
@@ -797,7 +798,9 @@
     migrateEmbeddedImages();
     syncConfigMetaDisplay();
     document.body.classList.add("page-ready");
-    const params = new URLSearchParams(location.search); if (params.get("edit") === "1") toggleEditor(true); if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
+    const params = new URLSearchParams(location.search); if (params.get("edit") === "1") { $(".edit-button").style.display = ""; toggleEditor(true); } if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
   }
   bootstrap();
+  window.openAshfallEditor = () => { $(".edit-button").style.display = ""; toggleEditor(true); };
+  window.closeAshfallEditor = () => toggleEditor(false);
 })();
