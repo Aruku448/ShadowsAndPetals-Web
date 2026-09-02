@@ -4,7 +4,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const root = __dirname;
 const uploadDir = path.join(root, "assets", "uploads");
-const port = Number(process.env.PORT || 8088);
+const port = Number(process.env.PORT || 8091);
 const mime = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" };
 const safeName = (value) => String(value || "upload").toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "upload";
 const send = (res, status, body, type = "application/json; charset=utf-8") => { res.writeHead(status, { "Content-Type": type, "Cache-Control": "no-store" }); res.end(body); };
