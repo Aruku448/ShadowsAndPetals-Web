@@ -1,7 +1,7 @@
 {
   "configVersion": 5,
   "brand": "织影落花",
-  "kicker": "FORGE 1.20.1 / 生存扩展模组",
+  "kicker": "NEOFORGE 1.21.1 / 26.1.2 / 生存扩展模组",
   "heroLine1": "织影落花",
   "heroLine2": "Shadows",
   "heroLine3": "&Petals",
@@ -19,8 +19,8 @@
   "sustainabilityTitle": "我们需要您的反馈",
   "sustainabilityBody": "诚邀您与我们\n一起完善\n《织影落花集》",
   "downloadTitle": "诚邀您\n翻开我们这本\n《织影落花集》",
-  "downloadLabel": "下载 V2.4.0",
-  "downloadUrl": "#",
+  "downloadLabel": "下载 V1.0 teacon",
+  "downloadUrl": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon",
   "version": "V2.4.0",
   "releaseDate": "2026.08.21",
   "loader": "Forge 1.20.1",
@@ -237,6 +237,9 @@
     "page:page-mtjjlqg5:page-next:a:0": {
       "align": "left",
       "positionMode": "flow"
+    },
+    "download:a:0": {
+      "href": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon"
     }
   },
   "customElements": [
@@ -490,7 +493,7 @@
     }
   ],
   "configMeta": {
-    "revision": 1,
-    "updatedAt": "2026-09-03 07:24"
+    "revision": 4,
+    "updatedAt": "2026-09-03 08:00"
   }
 }
