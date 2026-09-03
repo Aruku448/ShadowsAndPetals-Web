@@ -23,7 +23,9 @@
   "downloadUrl": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon",
   "version": "V2.4.0",
   "releaseDate": "2026.08.21",
-  "loader": "Forge 1.20.1",
+  "loader": "Neoforge 1.21.1 / 26.1.2",
+  "trailerVideo": "",
+  "trailerImage": "assets/uploads/home-trailerimage-1788438378619-4811bc.jpeg",
   "accent": "#FF5A36",
   "heroShade": "29",
   "heroFocus": 52,
@@ -228,7 +230,7 @@
       "text": " "
     },
     "footer:p:0": {
-      "text": "烧烤金鱼team 制作"
+      "text": "烧烤金鱼™ 制作"
     },
     "page:page-mtiu1mqy:page-next:p:0": {
       "positionMode": "flow",
@@ -240,6 +242,12 @@
     },
     "download:a:0": {
       "href": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon"
+    },
+    "showreel:p:0": {
+      "text": "Shadows&Petals/ 🫓"
+    },
+    "download:edition-label": {
+      "text": "Minecraft ·"
     }
   },
   "customElements": [
@@ -493,7 +501,7 @@
     }
   ],
   "configMeta": {
-    "revision": 4,
-    "updatedAt": "2026-09-03 08:00"
+    "revision": 6,
+    "updatedAt": "2026-09-03 20:34"
   }
 }

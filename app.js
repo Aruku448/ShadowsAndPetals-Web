@@ -38,6 +38,8 @@
     version: "V2.4.0",
     releaseDate: "2026.08.21",
     loader: "Forge 1.20.1",
+    trailerVideo: "",
+    trailerImage: "assets/news-cavern.png",
     accent: "#DDFD5A",
     heroShade: 34,
     heroFocus: 52,
@@ -340,6 +342,7 @@
     ".expertise-item, .expertise-item h3, .expertise-item p, .expertise-thumb, .expertise-item .item-arrow",
     ".site-footer, .site-footer a, .site-footer h3, .site-footer p, .custom-element",
     ".subpage-view section, .subpage-view section > *, .subpage-view h1, .subpage-view h2, .subpage-view p, .subpage-view a, .subpage-view img, .subpage-view .double-arrow",
+    "[data-element-key]",
   ].join(", ");
 
   function elementScope(element) {
@@ -775,14 +778,32 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
     history.replaceState(null, "", `${location.pathname}${location.search}`);
   });
-  $(".watch-button")?.addEventListener("click", () => showToast("预告片将在下一版本上线"));
+  $(".watch-button")?.addEventListener("click", () => {
+    const trailerVideo = state.trailerVideo;
+    if (!trailerVideo) { showToast("预告片将在下一版本上线"); return; }
+    const layer = $(".trailer-layer"); if (!layer) return;
+    const video = layer.querySelector("video");
+    video.src = trailerVideo;
+    layer.classList.add("is-open");
+    layer.setAttribute("aria-hidden", "false");
+    video.play().catch(() => {});
+  });
+  function closeTrailer() {
+    const layer = $(".trailer-layer"); if (!layer) return;
+    const video = layer.querySelector("video");
+    video.pause(); video.removeAttribute("src"); video.load();
+    layer.classList.remove("is-open");
+    layer.setAttribute("aria-hidden", "true");
+  }
+  $(".trailer-close")?.addEventListener("click", closeTrailer);
+  $(".trailer-layer")?.addEventListener("click", (event) => { if (event.target === event.currentTarget) closeTrailer(); });
   $(".search-button")?.addEventListener("click", () => { $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); const query = $("#site-search").value.trim().toLowerCase(); const hits = query ? [...document.querySelectorAll("main h2, main h3, main p")].filter((el) => el.textContent.toLowerCase().includes(query)).length : 0; $(".search-result").textContent = query ? `找到 ${hits} 个相关内容` : "请输入关键词"; });
   $(".menu-button")?.addEventListener("click", () => { $(".menu-layer").classList.add("is-open"); $(".menu-layer").setAttribute("aria-hidden", "false"); }); $(".menu-close")?.addEventListener("click", () => { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); }); $(".menu-layer")?.addEventListener("click", (event) => { if (event.target.closest("a")) { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); } });
   $(".download-button")?.addEventListener("click", (event) => { if (!state.downloadUrl || state.downloadUrl === "#") { event.preventDefault(); showToast("请在编辑器中填写下载链接"); } });
 
   function revealInViewport() { $$(".reveal, .reveal-card, .media-reveal").forEach((element) => { const rect = element.getBoundingClientRect(); if (rect.top < window.innerHeight * .94 && rect.bottom > -40) element.classList.add("is-visible"); }); }
   let colorFrame; window.addEventListener("scroll", () => { const y = window.scrollY; $(".site-header").classList.toggle("is-scrolled", y > 40); const max = document.documentElement.scrollHeight - window.innerHeight; $(".scroll-progress span").style.width = `${max ? y / max * 100 : 0}%`; document.documentElement.style.setProperty("--hero-shift", `${Math.min(y * .04, 32)}px`); revealInViewport(); if (!colorFrame) colorFrame = requestAnimationFrame(() => { colorFrame = null; updateWordWave(); }); }, { passive: true }); window.addEventListener("resize", () => { revealInViewport(); updateWordWave(); }, { passive: true });
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape") { if ($(".menu-layer").classList.contains("is-open")) $(".menu-close").click(); else if ($(".search-layer").classList.contains("is-open")) $(".search-close").click(); else if (document.body.classList.contains("editor-open")) toggleEditor(false); } if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && document.body.classList.contains("editor-open")) { event.preventDefault(); (event.shiftKey ? $(".redo-button") : $(".undo-button")).click(); } });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") { if ($(".trailer-layer").classList.contains("is-open")) closeTrailer(); else if ($(".menu-layer").classList.contains("is-open")) $(".menu-close").click(); else if ($(".search-layer").classList.contains("is-open")) $(".search-close").click(); else if (document.body.classList.contains("editor-open")) toggleEditor(false); } if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && document.body.classList.contains("editor-open")) { event.preventDefault(); (event.shiftKey ? $(".redo-button") : $(".undo-button")).click(); } });
 
   function observeReveals() { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), { threshold: .08 }); $$(".reveal, .reveal-card, .media-reveal").forEach((element) => observer.observe(element)); }
   async function bootstrap() {
