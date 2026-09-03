@@ -590,3 +590,6 @@ main > section { position: relative; }
 /* 灰度测试：默认隐藏编辑器入口，普通访客不可见。
    开发者可通过 URL 参数 ?edit=1，或在控制台执行 openAshfallEditor() 打开编辑器。 */
 .edit-button { display: none; }
+
+/* 开发环境（localhost）默认显示编辑按钮，可直接点击“自定义”进入编辑器 */
+body.is-dev .edit-button { display: inline-flex; }

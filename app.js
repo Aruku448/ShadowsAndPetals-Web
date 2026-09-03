@@ -797,6 +797,7 @@
     render(); observeReveals(); revealInViewport();
     migrateEmbeddedImages();
     syncConfigMetaDisplay();
+    if (isLocalDev) document.body.classList.add("is-dev");
     document.body.classList.add("page-ready");
     const params = new URLSearchParams(location.search); if (params.get("edit") === "1") { $(".edit-button").style.display = ""; toggleEditor(true); } if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
   }
