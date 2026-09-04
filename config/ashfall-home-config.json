@@ -23,7 +23,7 @@
   "downloadUrl": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon",
   "version": "V2.4.0",
   "releaseDate": "2026.08.21",
-  "loader": "Forge 1.20.1",
+  "loader": "Neoforge 1.21.1 / 26.1.2",
   "trailerVideo": "<iframe src=\"//player.bilibili.com/player.html?isOutside=true&aid=834197803&bvid=BV1Pg4y1f7Bp&cid=1352225969&p=1\" scrolling=\"no\" border=\"0\" frameborder=\"no\" framespacing=\"0\" allowfullscreen=\"true\"></iframe>",
   "trailerImage": "assets/uploads/home-trailerimage-1788554466568-5e0b32.jpeg",
   "accent": "#FF5A36",
@@ -545,7 +545,7 @@
     }
   ],
   "configMeta": {
-    "revision": 10,
-    "updatedAt": "2026-09-05 06:15"
+    "revision": 11,
+    "updatedAt": "2026-09-05 07:00"
   }
 }

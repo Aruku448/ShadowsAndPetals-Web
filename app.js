@@ -14,30 +14,30 @@
 
   const defaults = {
     configVersion: 6,
-    brand: "ASH/FALL",
-    kicker: "FORGE 1.20.1 / 生存扩展模组",
-    heroLine1: "Forever",
-    heroLine2: "Advancing",
-    heroLine3: "Architecture",
-    heroSummary: "让环境、机械与天气共同书写每一次生存。",
-    manifestoEyebrow: "持续设计、测试与重建",
-    manifestoBody: "从深层矿脉到漂浮群岛，从机械工坊到雷暴云层，ASHFALL 正在构建一个更有回应的世界。每一种资源、每一套系统、每一次选择，都拥有真正的重量。",
-    newsTitle: "ASHFALL 的\n最新动态",
-    newsBody: "从版本发布、开发日志到社区合作，每一次更新都让这个世界更完整。",
-    expertiseTitle: "探索完整的\n生存系统",
-    expertiseBody: "从一株会随季节改变的植物，到横跨整个维度的能源网络。每个系统都独立成立，也彼此影响。",
-    aboutTitle: "关于这个\n不断生长的世界",
-    aboutBody: "我们是建筑者、设计者与代码作者。我们研究玩家如何探索、如何协作，也研究一个世界怎样才能值得长期居住。",
-    researchTitle: "永远先于\n下一条曲线",
-    researchBody: "分析、实验、压测、重构。我们的研究从世界生成延伸到多人同步，确保复杂系统也能保持清晰、稳定和可扩展。",
-    sustainabilityTitle: "为长期世界\n而设计",
-    sustainabilityBody: "从低负载世界生成到可迁移存档，我们把性能、兼容性与长期更新纳入每一项系统设计。",
-    downloadTitle: "进入下一片\n未知荒野",
-    downloadLabel: "下载 V2.4.0",
-    downloadUrl: "#",
+    brand: "织影落花",
+    kicker: "NEOFORGE 1.21.1 / 26.1.2 / 生存扩展模组",
+    heroLine1: "织影落花",
+    heroLine2: "Shadows",
+    heroLine3: "&Petals",
+    heroSummary: "禅意，是Minecraft里的永恒语言",
+    manifestoEyebrow: "一款以和风美学为核心的装饰&农业模组",
+    manifestoBody: "“庭院，四季，耕作”\n\n我们通过这三个元素，在模组内加入了兼具观赏性与实用性的装饰，家具，作物，环境等细节\n\n“物哀，幽玄，侘寂”\n\n我们通过这三个元素，力图让玩家们在自己的Minecraft世界中找到精神上的和风世界",
+    newsTitle: "最新动态",
+    newsBody: "从月度更新公告，到参与活动介绍，再到一些学术上的展示，您都能在这里浏览",
+    expertiseTitle: "关于我们的一切",
+    expertiseBody: "从织影落花模组的视觉化方块\n抑或是织影落花的听觉化表达\n这里有太多的元素等大家了解",
+    aboutTitle: "关于\n我们的诞生",
+    aboutBody: "织影落花模组的诞生\n是我们在背后的不断努力\n当然也有大家的不断支持",
+    researchTitle: "花开花落\n总会再有一年",
+    researchBody: "织影落花模组的终点\n无论什么时候问我们\n答案永远会是“明年”\n那么我们在这一年又会做些什么？\n\n",
+    sustainabilityTitle: "我们需要您的反馈",
+    sustainabilityBody: "诚邀您与我们\n一起完善\n《织影落花集》",
+    downloadTitle: "诚邀您\n翻开我们这本\n《织影落花集》",
+    downloadLabel: "下载 V1.0 teacon",
+    downloadUrl: "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon",
     version: "V2.4.0",
     releaseDate: "2026.08.21",
-    loader: "Forge 1.20.1",
+    loader: "Neoforge 1.21.1 / 26.1.2",
     trailerVideo: "",
     trailerImage: "assets/news-cavern.png",
     accent: "#DDFD5A",
@@ -59,17 +59,17 @@
       {
         id: "page-world-systems",
         parentId: null,
-        slug: "world-systems",
-        navLabel: "世界系统",
-        eyebrow: "WORLD SYSTEMS / 01",
-        title: "让每一片土地\n回应玩家",
-        summary: "深入了解环境、气候与资源如何共同塑造 ASH/FALL 的生存体验。",
-        contentTitle: "世界并非静止的背景",
-        body: "气候会改变作物与能见度，地下热流决定机械网络的选址，而玩家的采集与建造也会持续改变周围生态。\n\n这些系统彼此独立，又通过清晰的规则互相影响，让每一次选择都留下可观察的结果。",
-        heroImage: "assets/feature-weather.png",
-        ctaLabel: "前往下载",
+        slug: "2026-teacon",
+        navLabel: "2026 TeaCon展会",
+        eyebrow: "2026TeaCon",
+        title: "2026 TeaCon 展会\n织影落花 的 初次见面",
+        summary: "在2026年的最后一个季度，我们终于要向大家展示《织影落花集》了......",
+        contentTitle: "《织影落花集·九月》—— 远在远方的风",
+        body: "织影落花Mod在2026年第四季度的TeaCon展览会[1]上首次亮相，看看在这次展览会上我们有什么点值得大家记住吧：",
+        heroImage: "assets/uploads/migrated-pages-0-heroimage-1788283442540-2852dd.jpeg",
+        ctaLabel: "对我们Mod感兴趣吗？点击这里下载",
         ctaUrl: "./index.html#download",
-        published: true,
+        published: false,
       },
     ],
     heroImage: "assets/hero-ashfall.png",
@@ -79,13 +79,13 @@
     news: [
       ["版本", "2026.08.21", "V2.4.0：灰烬气候正式上线", "新增火山灰事件、地热增压与六种适应性植被。", "assets/news-cavern.png"],
       ["开发日志", "2026.08.14", "世界生成器开始重构", "新的地形规则让每次远征都拥有不同的资源脉络。", "assets/feature-ecology.png"],
-      ["社区", "2026.08.02", "ASHFALL 建筑挑战赛开启", "用一周时间，把最危险的群系变成最值得居住的地方。", "assets/about-team.png"],
+      ["社区", "2026.08.02", "织影落花建筑挑战赛开启", "用一周时间，把最危险的群系变成最值得居住的地方。", "assets/about-team.png"],
       ["机制", "2026.07.19", "天气系统进入多人测试", "气压、温度和海拔现在会在服务器间稳定同步。", "assets/feature-weather.png"],
       ["研究", "2026.07.06", "地热网络的第一张图纸", "能源不是凭空出现，新的生产线需要理解地下热流。", "assets/research-lab.png"],
       ["发布", "2026.06.22", "V2.3.0：深层矿脉", "六种矿物与一套新的矿井照明系统已加入游戏。", "assets/feature-machinery.png"],
       ["社区", "2026.06.10", "与建筑师一起做 Mod", "开放一场关于空间、路径与玩家记忆的线上工作坊。", "assets/about-team.png"],
       ["系统", "2026.05.26", "可迁移存档实验完成", "跨版本迁移不再抹掉你的世界历史与自定义规则。", "assets/sustainability-world.png"],
-      ["合作", "2026.05.13", "ASHFALL x 星尘服务器", "首个大型公共服务器开始邀请玩家参与压力测试。", "assets/news-cavern.png"],
+      ["合作", "2026.05.13", "织影落花 x 星尘服务器", "首个大型公共服务器开始邀请玩家参与压力测试。", "assets/news-cavern.png"],
       ["机制", "2026.04.29", "植物会记住季节", "生态系统现在会根据湿度与玩家行为持续演化。", "assets/feature-ecology.png"],
       ["性能", "2026.04.12", "低负载区块缓存上线", "远处的世界更轻，近处的细节仍然完整。", "assets/research-lab.png"],
       ["视觉", "2026.03.24", "新的粒子调色板", "火山灰、冰晶与萤光矿物拥有了独立的光照反应。", "assets/feature-machinery.png"],
@@ -137,6 +137,8 @@
       merged.heroLine2 = defaults.heroLine2;
       merged.heroLine3 = defaults.heroLine3;
     }
+    if (merged.kicker === "FORGE 1.20.1 / 生存扩展模组") merged.kicker = "NEOFORGE 1.21.1 / 26.1.2 / 生存扩展模组";
+    if (merged.loader === "Forge 1.20.1") merged.loader = "Neoforge 1.21.1 / 26.1.2";
     merged.configVersion = defaults.configVersion;
     merged.news = defaults.news.map((item, index) => ({ ...item, ...(Array.isArray(input.news) ? input.news[index] : {}) }));
     merged.expertise = defaults.expertise.map((item, index) => ({ ...item, ...(Array.isArray(input.expertise) ? input.expertise[index] : {}) }));
@@ -418,7 +420,7 @@
       </section>
       <section class="subpage-next section-dark${next ? "" : " is-home-return"}" id="page-next">
         <p>继续探索</p>
-        ${next ? `<a href="${pageUrl(next.slug)}"><span class="subpage-next-meta">${escapeHTML(next.eyebrow)}</span><strong>${escapeHTML(next.title).replace(/\n/g, " ")}</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>` : `<a href="${homeUrl("#download")}" data-home-link="#download"><span class="subpage-next-meta">ASH/FALL</span><strong>返回首页继续探索</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>`}
+        ${next ? `<a href="${pageUrl(next.slug)}"><span class="subpage-next-meta">${escapeHTML(next.eyebrow)}</span><strong>${escapeHTML(next.title).replace(/\n/g, " ")}</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>` : `<a href="${homeUrl("#download")}" data-home-link="#download"><span class="subpage-next-meta">织影落花</span><strong>返回首页继续探索</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>`}
       </section>`;
     renderPageMarkdown(page);
     if (window.matchMedia("(max-width: 986px)").matches) closePageOutline();
