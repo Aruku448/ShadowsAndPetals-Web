@@ -11,6 +11,7 @@
 - 依赖：`package.json`
 - 语法检查：`npm run check`
 - 灰度测试：部署站（GitHub Pages）默认隐藏编辑入口（“自定义”按钮），普通访客不可见。开发者可通过 URL 参数 `?edit=1`，或在控制台执行 `openAshfallEditor()` / `closeAshfallEditor()` 打开/关闭编辑器。本地开发（localhost）默认显示编辑按钮，可直接点击进入编辑器。正式开放时删除 `styles.css` 末尾的 `.edit-button { display: none; }` 即可让所有环境恢复入口。
+- 搜索会检查 `state.pages` 中的所有子页，包括已发布页面和草稿页面；页面是否显示在导航中仍由 `published` 控制。
 - 本地服务：Linux/macOS 使用 `npm run dev`；Windows 可双击项目根目录的 `start-server.bat`。脚本默认使用 8091 端口，也可在命令提示符中用 `set PORT=8092 && npm run dev` 更换端口。该服务同时提供图片上传（`POST /api/upload`）和配置写回（`POST /api/save-config`，编辑器“配置”页签的“保存到 config JSON”按钮）接口，不要用 `file://` 打开页面来上传图片或写回配置。首次运行前请安装 Node.js 18 或更新版本。
 
 ### Windows 安装 Node.js
