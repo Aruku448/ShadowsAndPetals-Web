@@ -354,10 +354,12 @@
     links.forEach((link, index) => link.classList.toggle("is-active", index === activeIndex));
   }
 
+  function prepareMarkdownImages(body) { body.querySelectorAll("img").forEach((image) => { const source = image.getAttribute("src")?.trim(); if (!source) return; if (source.startsWith("//")) image.src = `https:${source}`; else if (/^(?:\.\/)?uploads\//i.test(source)) image.src = source.replace(/^\.\//, "assets/"); image.loading = "lazy"; image.decoding = "async"; image.referrerPolicy = "no-referrer"; image.addEventListener("error", () => image.classList.add("is-broken"), { once: true }); }); }
   function renderPageMarkdown(page) {
     const body = $("[data-page-markdown]");
     if (!body) return;
     body.innerHTML = pageMarkdown(page);
+    prepareMarkdownImages(body);
     body.querySelectorAll("a").forEach((link) => { link.target = "_blank"; link.rel = "noopener noreferrer"; });
     buildPageOutline(body);
     updatePageOutlineActive();

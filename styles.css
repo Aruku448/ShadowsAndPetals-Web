@@ -427,7 +427,7 @@ body.page-ready .page-loader { opacity: 0; visibility: hidden; pointer-events: n
 .markdown-body th { color: #3f444c; font-weight: 700; background: rgba(118, 126, 138, .07); }
 .markdown-body tr:last-child td { border-bottom: 0; }
 .markdown-body img { display: block; max-width: 100%; height: auto; margin: 1.6em 0; border-radius: 11px; }
-.markdown-body input[type="checkbox"] { width: 1em; height: 1em; margin: 0 .45em 0 0; accent-color: #2878c8; vertical-align: -.12em; }
+.markdown-body img.is-broken { min-height: 48px; padding: 12px; border: 1px dashed #c7ced6; color: #68727d; background: #f3f5f7; }
 .markdown-body pre code { display: block; padding: 0; color: inherit; background: transparent; }
 .markdown-body .task-list-item { list-style: none; margin-left: -1.45em; }
 .markdown-body .task-list-item input { pointer-events: none; }
