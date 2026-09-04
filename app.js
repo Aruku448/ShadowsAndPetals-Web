@@ -46,6 +46,11 @@
     textureGrain: 5,
     mediaHighlight: 24,
     glassOpacity: 56,
+    headerTopOpacity: 0,
+    headerScrolledOpacity: 84,
+    headerBlur: 14,
+    headerBorder: 0,
+    headerLightOnScroll: true,
     editorOpacity: 96,
     elementStyles: {},
     customElements: [],
@@ -219,7 +224,15 @@
   function viewedPage() { return state.pages.find((page) => page.id === viewPageId) || null; }
   function cleanSlug(value) { return String(value || "page").trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff-]+/g, "-").replace(/^-+|-+$/g, "") || "page"; }
   function uniqueSlug(value, exceptId = null) { const base = cleanSlug(value); let slug = base; let suffix = 2; while (state.pages.some((page) => page.id !== exceptId && page.slug === slug)) slug = `${base}-${suffix++}`; return slug; }
-  function previewPage(id) { const page = state.pages.find((item) => item.id === id); if (!page) return; viewPageId = page.id; activePageId = page.id; history.replaceState(null, "", pageUrl(page.slug)); selectedElementKey = null; render(); window.scrollTo({ top: 0, behavior: "auto" }); }
+  function syncViewedPageFromLocation() {
+    const slug = new URLSearchParams(location.search).get("page");
+    const page = slug ? state.pages.find((item) => item.slug === slug) : null;
+    viewPageId = slug ? page?.id || "missing" : null;
+    activePageId = page?.id || state.pages[0]?.id || null;
+    return page;
+  }
+  function previewPage(id) { const page = state.pages.find((item) => item.id === id); if (!page) return; viewPageId = page.id; activePageId = page.id; history.pushState(null, "", pageUrl(page.slug)); selectedElementKey = null; render(); window.scrollTo({ top: 0, behavior: "auto" }); }
+  function previewPageFromUrl(url) { history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`); syncViewedPageFromLocation(); selectedElementKey = null; render(); window.scrollTo({ top: 0, behavior: "auto" }); return viewPageId !== "missing"; }
 
   function homeLinkTargetLabel(element) {
     const kind = element.matches("img") ? "图片" : "按钮";
@@ -285,10 +298,83 @@
     if (image.complete && image.naturalWidth) reveal();
   }
 
+  function markdownSource(source) {
+    const emoji = { smile: "😄", heart: "❤️", rocket: "🚀", sparkles: "✨", fire: "🔥", tada: "🎉", warning: "⚠️", check: "✅", x: "❌" };
+    return source
+      .replace(/^([^\n:]+)\n: ([^\n]+)$/gm, "<dl><dt>$1</dt><dd>$2</dd></dl>")
+      .replace(/^\$\$\s*\n?([\s\S]*?)\n?\$\$$/gm, (_, math) => `\`\`\`math\n${math}\n\`\`\``)
+      .replace(/(^|[^\\])\$([^$\n]+)\$/g, (_, prefix, math) => `${prefix}<code class="language-math">${math}</code>`)
+      .replace(/:([a-z0-9_+-]+):/gi, (match, name) => emoji[name.toLowerCase()] || match);
+  }
+
+  function pageMarkdown(page) {
+    const source = markdownSource(String(page.body || ""));
+    if (!window.marked || !window.DOMPurify) return `<p>${escapeHTML(source).replace(/\n/g, "<br />")}</p>`;
+    const parser = window.markedFootnote ? new window.marked.Marked().use(window.markedFootnote()) : window.marked;
+    const raw = parser.parse(source, { gfm: true, breaks: true, headerIds: false });
+    return window.DOMPurify.sanitize(raw, { ALLOWED_TAGS: ["h1", "h2", "h3", "h4", "h5", "h6", "p", "br", "hr", "ul", "ol", "li", "blockquote", "strong", "em", "del", "u", "code", "pre", "a", "img", "table", "thead", "tbody", "tfoot", "tr", "th", "td", "input", "dl", "dt", "dd", "sup", "section", "div", "span"], ALLOWED_ATTR: ["href", "src", "alt", "title", "target", "rel", "class", "id", "style", "align", "colspan", "rowspan", "type", "checked", "disabled"] });
+  }
+
+  async function enhanceMarkdown(body) {
+    if (window.katex) body.querySelectorAll("code.language-math").forEach((code) => {
+      const display = code.parentElement?.tagName === "PRE";
+      const target = display ? code.parentElement : code;
+      try { window.katex.render(code.textContent.trim(), target, { displayMode: display, throwOnError: false }); } catch { /* Keep the sanitized code fallback. */ }
+    });
+    if (!window.mermaid) return;
+    const nodes = [...body.querySelectorAll("pre > code.language-mermaid")];
+    if (!nodes.length) return;
+    try {
+      const rendered = await Promise.all(nodes.map(async (code, index) => {
+        const id = `mermaid-${Date.now()}-${index}`;
+        const { svg } = await window.mermaid.render(id, code.textContent);
+        return { code, svg };
+      }));
+      rendered.forEach(({ code, svg }) => { const figure = document.createElement("figure"); figure.className = "markdown-mermaid"; figure.innerHTML = svg; code.parentElement.replaceWith(figure); });
+    } catch { /* Keep source code when Mermaid rejects a diagram. */ }
+  }
+
+  function buildPageOutline(container) {
+    const headings = [...container.querySelectorAll("h2, h3")];
+    const usedIds = new Set();
+    const slugify = (text, index) => { const base = String(text).trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-").replace(/^-+|-+$/g, "") || `section-${index + 1}`; let id = `article-${base}`; let suffix = 2; while (usedIds.has(id)) id = `article-${base}-${suffix++}`; usedIds.add(id); return id; };
+    headings.forEach((heading, index) => { heading.id = slugify(heading.textContent, index); });
+    const outline = $("[data-page-outline]");
+    if (!outline) return;
+    outline.innerHTML = headings.length ? headings.map((heading) => `<a class="outline-level-${heading.tagName.slice(1)}" href="#${heading.id}">${escapeHTML(heading.textContent)}</a>`).join("") : `<p class="outline-empty">暂无章节</p>`;
+  }
+
+  function updatePageOutlineActive() {
+    const body = $("[data-page-markdown]");
+    const links = $$('[data-page-outline] a');
+    if (!body || !links.length) return;
+    const headings = [...body.querySelectorAll("h2, h3")];
+    let activeIndex = 0;
+    headings.forEach((heading, index) => { if (heading.getBoundingClientRect().top <= 150) activeIndex = index; });
+    links.forEach((link, index) => link.classList.toggle("is-active", index === activeIndex));
+  }
+
+  function renderPageMarkdown(page) {
+    const body = $("[data-page-markdown]");
+    if (!body) return;
+    body.innerHTML = pageMarkdown(page);
+    body.querySelectorAll("a").forEach((link) => { link.target = "_blank"; link.rel = "noopener noreferrer"; });
+    buildPageOutline(body);
+    updatePageOutlineActive();
+    enhanceMarkdown(body);
+  }
+
+  function closePageOutline() { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-toggle]"); if (!panel || !toggle) return; if (panel.contains(document.activeElement)) toggle.focus(); const mobile = window.matchMedia("(max-width: 986px)").matches; panel.classList.remove("is-open"); panel.setAttribute("aria-hidden", String(mobile)); panel.inert = mobile; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-label", "打开文章大纲"); }
+
+  function togglePageOutline(open = null) { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-header-toggle]"); if (!panel || !toggle) return; const next = open == null ? !panel.classList.contains("is-open") : open; if (next) { panel.inert = false; panel.setAttribute("aria-hidden", "false"); } panel.classList.toggle("is-open", next); toggle.setAttribute("aria-expanded", String(next)); toggle.setAttribute("aria-label", next ? "关闭文章大纲" : "打开文章大纲"); if (next) panel.querySelector("a")?.focus(); else closePageOutline(); }
+
   function renderSubpage() {
     const view = $("[data-subpage-view]");
     const homeSections = $$("main > section");
     const page = viewedPage();
+    const outlineHeaderToggle = $("[data-page-outline-header-toggle]");
+    if (outlineHeaderToggle) outlineHeaderToggle.hidden = !viewPageId || !page;
+    document.body.classList.toggle("is-subpage", Boolean(viewPageId));
     if (!viewPageId) {
       homeSections.forEach((section) => { section.hidden = false; });
       view.hidden = true;
@@ -323,14 +409,18 @@
         <div class="section-tag"><span>01</span><p>${escapeHTML(page.navLabel)}</p></div>
         <div class="subpage-copy">
           <h2 data-page-field-display="contentTitle">${escapeHTML(page.contentTitle)}</h2>
-          <p data-page-field-display="body">${escapeHTML(page.body)}</p>
-          <a class="inline-cta dark" href="${escapeHTML(page.ctaUrl || "#")}" data-page-cta data-page-field-display="ctaLabel">${escapeHTML(page.ctaLabel)} <span class="double-arrow" data-element-key="page:${escapeHTML(page.id)}:content:cta-arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>
+          <div class="markdown-body" data-page-field-display="body" data-page-markdown></div>
+          <div class="subpage-actions"><a class="inline-cta dark" href="${escapeHTML(page.ctaUrl || "#")}" data-page-cta data-page-field-display="ctaLabel">${escapeHTML(page.ctaLabel)} <span class="double-arrow" data-element-key="page:${escapeHTML(page.id)}:content:cta-arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a></div>
         </div>
+        <aside class="page-outline-panel" data-page-outline-panel aria-label="文章大纲" aria-hidden="false"><div class="outline-header"><span>文章大纲</span><button class="icon-button outline-close" type="button" data-page-outline-close aria-label="关闭大纲"><i data-lucide="x"></i></button></div><nav data-page-outline></nav></aside>
       </section>
       <section class="subpage-next section-dark${next ? "" : " is-home-return"}" id="page-next">
         <p>继续探索</p>
         ${next ? `<a href="${pageUrl(next.slug)}"><span class="subpage-next-meta">${escapeHTML(next.eyebrow)}</span><strong>${escapeHTML(next.title).replace(/\n/g, " ")}</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>` : `<a href="${homeUrl("#download")}" data-home-link="#download"><span class="subpage-next-meta">ASH/FALL</span><strong>返回首页继续探索</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>`}
       </section>`;
+    renderPageMarkdown(page);
+    if (window.matchMedia("(max-width: 986px)").matches) closePageOutline();
+    if (window.lucide) window.lucide.createIcons();
     revealHeroMedia($(".subpage-hero-media", view));
     document.title = `${page.title.replace(/\n/g, " ")} — ${state.brand}`;
     return page;
@@ -436,10 +526,12 @@
     return `${element.tagName.toLowerCase()} · ${text.slice(0, 42) || elementScope(element)}`;
   }
 
+  function isMarkdownChild(element) { return Boolean(element.closest(".markdown-body") && !element.matches(".markdown-body")); }
+
   function refreshElementRegistry() {
     elementRegistry = new Map();
     $$(elementSelectors).forEach((element) => {
-      if (element.closest(".editor, .search-layer, .menu-layer, .page-loader") || element.closest("[hidden]")) return;
+      if (isMarkdownChild(element) || element.closest(".editor, .search-layer, .menu-layer, .page-loader") || element.closest("[hidden]")) return;
       const key = elementKey(element);
       element.dataset.elementId = key;
       elementRegistry.set(key, element);
@@ -459,7 +551,7 @@
     const props = { opacity: "opacity", color: "color", backgroundColor: "backgroundColor", fontSize: "fontSize", borderRadius: "borderRadius", paddingTop: "paddingTop", paddingBottom: "paddingBottom", marginTop: "marginTop", marginBottom: "marginBottom", height: "height" };
     Object.entries(props).forEach(([key, property]) => { if (style[key] != null && style[key] !== "") element.style[property] = key === "opacity" ? Number(style[key]) / 100 : key === "fontSize" || key.includes("padding") || key.includes("margin") || key === "borderRadius" || key === "height" ? `${style[key]}px` : style[key]; else element.style.removeProperty(property); });
     element.style.boxSizing = style.width || style.height ? "border-box" : "";
-    element.style.overflowY = style.height ? "auto" : "";
+    element.style.overflowY = style.height && !element.matches(".section-tag") ? "auto" : "";
     const mode = style.positionMode || "flow";
     const align = style.align || "left";
     if (mode === "free") {
@@ -569,6 +661,11 @@
     document.documentElement.style.setProperty("--grain-opacity", Number(state.textureGrain) / 100);
     document.documentElement.style.setProperty("--highlight-opacity", Number(state.mediaHighlight) / 100);
     document.documentElement.style.setProperty("--glass-alpha", Number(state.glassOpacity) / 100);
+    document.documentElement.style.setProperty("--header-top-alpha", Number(state.headerTopOpacity ?? 0) / 100);
+    document.documentElement.style.setProperty("--header-scrolled-alpha", Number(state.headerScrolledOpacity ?? 84) / 100);
+    document.documentElement.style.setProperty("--header-blur", `${Number(state.headerBlur ?? 14)}px`);
+    document.documentElement.style.setProperty("--header-border-alpha", Number(state.headerBorder ?? 0) / 100);
+    $(".site-header").classList.toggle("uses-dark-scroll-header", state.headerLightOnScroll === false);
     $(".editor").style.opacity = Math.max(.35, Math.min(1, Number(state.editorOpacity ?? 96) / 100));
     document.title = `${state.brand} — Minecraft Mod`;
     renderPageNavigation(); renderSubpage(); renderNews(); renderExpertise(); renderCustomElements(); syncElementScopes();
@@ -579,9 +676,9 @@
   }
 
   function syncControls() {
-    $$('[data-setting]').forEach((input) => { if (document.activeElement !== input) input.value = state[input.dataset.setting] ?? ""; });
+    $$('[data-setting]').forEach((input) => { if (document.activeElement !== input) { if (input.type === "checkbox") input.checked = Boolean(state[input.dataset.setting]); else input.value = state[input.dataset.setting] ?? ""; } });
     $("[data-color-output]").textContent = state.accent.toUpperCase();
-    $$('[data-range-output]').forEach((output) => { output.textContent = `${state[output.dataset.rangeOutput]}%`; });
+    $$('[data-range-output]').forEach((output) => { output.textContent = `${state[output.dataset.rangeOutput]}${output.dataset.rangeUnit ?? "%"}`; });
     $$('[data-collection-select]').forEach((select) => {
       const type = select.dataset.collectionSelect; const collection = state[type]; select.innerHTML = collection.map((item, index) => `<option value="${index}">${String(index + 1).padStart(2, "0")} · ${item.title}</option>`).join(""); select.value = activeCollection[type];
     });
@@ -714,7 +811,7 @@
 
   function remember(snapshot) { if (!snapshot || JSON.stringify(snapshot) === JSON.stringify(state)) return; past.push(snapshot); if (past.length > MAX_HISTORY) past.shift(); future = []; updateHistoryButtons(); }
   function updateHistoryButtons() { $(".undo-button").disabled = !past.length; $(".redo-button").disabled = !future.length; $(".undo-button").style.opacity = past.length ? "1" : ".3"; $(".redo-button").style.opacity = future.length ? "1" : ".3"; }
-  function applySetting(input) { state[input.dataset.setting] = input.value; render({ sync: false }); syncControls(); saveState(); }
+  function applySetting(input) { state[input.dataset.setting] = input.type === "checkbox" ? input.checked : input.value; render({ sync: false }); syncControls(); saveState(); }
 
   $$('[data-setting]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => applySetting(input)); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
   $$('[data-collection-select]').forEach((select) => select.addEventListener("change", () => { activeCollection[select.dataset.collectionSelect] = Number(select.value); syncControls(); }));
@@ -725,6 +822,27 @@
     input.addEventListener("focus", () => { interactionStart = clone(state); });
     input.addEventListener("input", () => { const page = selectedPage(); if (!page) return; const field = input.dataset.pageField; const value = input.type === "checkbox" ? input.checked : input.value; if (field === "parentId" && value && (value === page.id || isPageDescendant(value, page.id))) { input.value = page.parentId || ""; showToast("不能将页面设置为自身或自己的子页"); return; } page[field] = value || (field === "parentId" ? null : value); render({ sync: false }); renderPageList(); saveState(); });
     input.addEventListener("change", () => { const page = selectedPage(); if (page && input.dataset.pageField === "slug") { page.slug = uniqueSlug(input.value, page.id); input.value = page.slug; if (viewPageId === page.id) history.replaceState(null, "", pageUrl(page.slug)); render({ sync: false }); renderPageList(); saveState(); } remember(interactionStart); interactionStart = null; });
+  });
+  function markdownFileName(page) { const base = String(page.slug || page.title || "page").replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "page"; return `${base}.md`; }
+  $(".markdown-export-button")?.addEventListener("click", () => { const page = selectedPage(); if (!page) { showToast("先选择一个子页"); return; } const blob = new Blob([String(page.body || "")], { type: "text/markdown;charset=utf-8" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = markdownFileName(page); link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 0); showToast(`已导出 Markdown：${link.download}`); });
+  $("[data-page-markdown-import]")?.addEventListener("change", async (event) => {
+    const input = event.target;
+    const file = input.files?.[0];
+    const page = selectedPage();
+    if (!file || !page) return;
+    try {
+      const previous = clone(state);
+      const body = await file.text();
+      const markdown = body.replace(/^\uFEFF/, "");
+      if (markdown.length > 300000) { showToast("Markdown 文件不能超过 300000 字"); return; }
+      page.body = markdown;
+      remember(previous);
+      render({ sync: false });
+      syncPageControls();
+      saveState();
+      showToast(`已导入 Markdown：${file.name}`);
+    } catch { showToast("Markdown 文件读取失败"); }
+    input.value = "";
   });
   $(".page-add")?.addEventListener("click", () => { const previous = clone(state); const id = `page-${Date.now().toString(36)}`; const parentId = selectedPage()?.id || null; const page = { ...clone(defaults.pages[0]), id, parentId, slug: uniqueSlug("new-page"), navLabel: "新页面", eyebrow: "NEW PAGE", title: "新的故事页面", summary: "在这里填写页面摘要。", contentTitle: "正文标题", body: "在这里填写完整正文。", published: true }; state.pages.push(page); remember(previous); previewPage(id); saveState(); showToast(parentId ? "已新增子页面" : "已新增根页面"); });
   $(".page-duplicate")?.addEventListener("click", () => { const source = selectedPage(); if (!source) return; const previous = clone(state); const copy = { ...clone(source), id: `page-${Date.now().toString(36)}`, parentId: source.parentId || null, slug: uniqueSlug(`${source.slug}-copy`), navLabel: `${source.navLabel}副本`, published: false }; state.pages.push(copy); remember(previous); previewPage(copy.id); saveState(); showToast("已复制为草稿"); });
@@ -864,40 +982,79 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
     history.replaceState(null, "", `${location.pathname}${location.search}`);
   });
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-page-outline-toggle]")) { togglePageOutline(); return; }
+    if (event.target.closest("[data-page-outline-close]")) { closePageOutline(); return; }
+    if (event.target.closest("[data-page-outline] a")) { closePageOutline(); return; }
+    const link = event.target.closest('a[href*="?page="]');
+    if (!link || link.target === "_blank") return;
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname || !url.searchParams.has("page")) return;
+    if (!state.pages.some((page) => page.slug === url.searchParams.get("page"))) return;
+    event.preventDefault();
+    $(".search-layer").classList.remove("is-open");
+    $(".search-layer").setAttribute("aria-hidden", "true");
+    history.pushState(null, "", `${url.pathname}${url.search}`);
+    previewPageFromUrl(url);
+  });
+  window.addEventListener("popstate", () => { previewPageFromUrl(new URL(location.href)); });
+  function trailerEmbedUrl(value) {
+    const source = String(value || "").trim();
+    const iframeMatch = source.match(/<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/i);
+    const candidate = iframeMatch ? iframeMatch[1] : source;
+    try {
+      const url = new URL(candidate.startsWith("//") ? `https:${candidate}` : candidate, location.href);
+      if (url.hostname === "player.bilibili.com" && url.pathname === "/player.html") return url.href;
+    } catch { /* Fall through to the normal video URL path. */ }
+    return "";
+  }
+
   $(".watch-button")?.addEventListener("click", () => {
     const trailerVideo = state.trailerVideo;
     if (!trailerVideo) { showToast("预告片将在下一版本上线"); return; }
     const layer = $(".trailer-layer"); if (!layer) return;
     const video = layer.querySelector("video");
-    video.src = trailerVideo;
+    const frame = layer.querySelector("iframe");
+    const embedUrl = trailerEmbedUrl(trailerVideo);
+    if (embedUrl) {
+      video.pause(); video.removeAttribute("src"); video.load(); video.hidden = true;
+      frame.src = embedUrl; frame.hidden = false;
+    } else {
+      frame.removeAttribute("src"); frame.hidden = true;
+      video.hidden = false; video.src = trailerVideo; video.play().catch(() => {});
+    }
     layer.classList.add("is-open");
     layer.setAttribute("aria-hidden", "false");
-    video.play().catch(() => {});
   });
   function closeTrailer() {
     const layer = $(".trailer-layer"); if (!layer) return;
-    const video = layer.querySelector("video");
-    video.pause(); video.removeAttribute("src"); video.load();
+    const video = layer.querySelector("video"); const frame = layer.querySelector("iframe");
+    video.pause(); video.removeAttribute("src"); video.load(); frame.removeAttribute("src"); frame.hidden = true; video.hidden = false;
     layer.classList.remove("is-open");
     layer.setAttribute("aria-hidden", "true");
   }
   $(".trailer-close")?.addEventListener("click", closeTrailer);
   $(".trailer-layer")?.addEventListener("click", (event) => { if (event.target === event.currentTarget) closeTrailer(); });
-  $(".search-button")?.addEventListener("click", () => { $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); const query = $("#site-search").value.trim().toLowerCase(); const hits = query ? [...document.querySelectorAll("main h2, main h3, main p")].filter((el) => el.textContent.toLowerCase().includes(query)).length : 0; $(".search-result").textContent = query ? `找到 ${hits} 个相关内容` : "请输入关键词"; });
+  function searchPageText(page) { return [page.title, page.summary, page.body].filter(Boolean).join(" "); }
+  function searchExcerpt(sourceValue, query) { const source = String(sourceValue || "").replace(/[#>*_`~\[\]()!-]/g, " ").replace(/\s+/g, " ").trim(); const index = source.toLowerCase().indexOf(query); if (index < 0) return source.slice(0, 120); return `${index > 36 ? "..." : ""}${source.slice(Math.max(0, index - 36), index + 96)}${source.length > index + 96 ? "..." : ""}`; }
+  function searchMarkdownExcerpt(page, query) { return searchExcerpt(page.body || page.summary, query); }
+  function renderSearchResults(query) { const status = $(".search-result"); const results = $(".search-results"); if (!status || !results) return; if (!query) { status.textContent = "请输入关键词"; results.innerHTML = ""; return; } const hits = state.pages.filter((page) => (isLocalDev || page.published !== false) && searchPageText(page).toLowerCase().includes(query)); status.textContent = hits.length ? `找到 ${hits.length} 个${isLocalDev ? "子页（含草稿）" : "已发布子页"}` : `没有找到相关${isLocalDev ? "子页或草稿" : "已发布子页"}`; results.innerHTML = hits.map((page) => `<article class="search-result-item" role="listitem"><p class="search-result-eyebrow">子页 · ${escapeHTML(page.eyebrow || page.navLabel || "Markdown")}</p><h2>${escapeHTML(String(page.title || "未命名页面").replace(/\n/g, " "))}</h2><p class="search-result-summary">${escapeHTML(page.summary || "暂无简述")}</p><p class="search-result-markdown"><span>Markdown</span> ${escapeHTML(searchMarkdownExcerpt(page, query))}</p><a href="${pageUrl(page.slug)}" class="search-result-link">进入子页 <i data-lucide="arrow-up-right"></i></a></article>`).join(""); if (window.lucide) window.lucide.createIcons(); }
+  $(".search-button")?.addEventListener("click", () => { $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); renderSearchResults($("#site-search").value.trim().toLowerCase()); }); $("#site-search")?.addEventListener("input", (event) => renderSearchResults(event.target.value.trim().toLowerCase()));
   $(".menu-button")?.addEventListener("click", () => { $(".menu-layer").classList.add("is-open"); $(".menu-layer").setAttribute("aria-hidden", "false"); }); $(".menu-close")?.addEventListener("click", () => { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); }); $(".menu-layer")?.addEventListener("click", (event) => { if (event.target.closest("a")) { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); } });
   $(".download-button")?.addEventListener("click", (event) => { if (!state.downloadUrl || state.downloadUrl === "#") { event.preventDefault(); showToast("请在编辑器中填写下载链接"); } });
 
   function revealInViewport() { $$(".reveal, .reveal-card, .media-reveal").forEach((element) => { const rect = element.getBoundingClientRect(); if (rect.top < window.innerHeight * .94 && rect.bottom > -40) element.classList.add("is-visible"); }); }
-  let colorFrame; window.addEventListener("scroll", () => { const y = window.scrollY; $(".site-header").classList.toggle("is-scrolled", y > 40); const max = document.documentElement.scrollHeight - window.innerHeight; $(".scroll-progress span").style.width = `${max ? y / max * 100 : 0}%`; document.documentElement.style.setProperty("--hero-shift", `${Math.min(y * .04, 32)}px`); revealInViewport(); if (!colorFrame) colorFrame = requestAnimationFrame(() => { colorFrame = null; updateWordWave(); }); }, { passive: true }); window.addEventListener("resize", () => { revealInViewport(); updateWordWave(); }, { passive: true });
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape") { if ($(".trailer-layer").classList.contains("is-open")) closeTrailer(); else if ($(".menu-layer").classList.contains("is-open")) $(".menu-close").click(); else if ($(".search-layer").classList.contains("is-open")) $(".search-close").click(); else if (document.body.classList.contains("editor-open")) toggleEditor(false); } if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && document.body.classList.contains("editor-open")) { event.preventDefault(); (event.shiftKey ? $(".redo-button") : $(".undo-button")).click(); } });
+  let colorFrame; window.addEventListener("scroll", () => { const y = window.scrollY; $(".site-header").classList.toggle("is-scrolled", y > 40); const max = document.documentElement.scrollHeight - window.innerHeight; $(".scroll-progress span").style.width = `${max ? y / max * 100 : 0}%`; document.documentElement.style.setProperty("--hero-shift", `${Math.min(y * .04, 32)}px`); revealInViewport(); updatePageOutlineActive(); if (!colorFrame) colorFrame = requestAnimationFrame(() => { colorFrame = null; updateWordWave(); }); }, { passive: true }); window.addEventListener("resize", () => { revealInViewport(); updateWordWave(); }, { passive: true });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { if ($(".trailer-layer").classList.contains("is-open")) closeTrailer(); else if ($(".menu-layer").classList.contains("is-open")) $(".menu-close").click(); else if ($(".search-layer").classList.contains("is-open")) $(".search-close").click(); else if ($("[data-page-outline-panel].is-open")) closePageOutline(); else if (document.body.classList.contains("editor-open")) toggleEditor(false); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && document.body.classList.contains("editor-open")) { event.preventDefault(); (event.shiftKey ? $(".redo-button") : $(".undo-button")).click(); }
+  });
 
   function observeReveals() { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), { threshold: .08 }); $$(".reveal, .reveal-card, .media-reveal").forEach((element) => observer.observe(element)); }
   async function bootstrap() {
+    if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, theme: "base", securityLevel: "strict", themeVariables: { primaryColor: "#eef0e8", primaryTextColor: "#30332e", primaryBorderColor: "#62665f", lineColor: "#62665f", tertiaryColor: "#f5f4ed" } });
     const loadedBundledConfig = await loadBundledConfig();
-    if (loadedBundledConfig) {
-      viewPageId = initialPageSlug ? state.pages.find((page) => page.slug === initialPageSlug)?.id || "missing" : null;
-      activePageId = viewPageId && viewPageId !== "missing" ? viewPageId : state.pages[0]?.id || null;
-    }
+    syncViewedPageFromLocation();
     revealHeroMedia($(".hero-media"));
     if (window.lucide) window.lucide.createIcons();
     syncElementScopes();
