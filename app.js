@@ -13,7 +13,7 @@
   const seedImages = ["assets/feature-ecology.png", "assets/feature-machinery.png", "assets/feature-weather.png", "assets/news-cavern.png", "assets/about-team.png", "assets/research-lab.png", "assets/sustainability-world.png"];
 
   const defaults = {
-    configVersion: 5,
+    configVersion: 6,
     brand: "ASH/FALL",
     kicker: "FORGE 1.20.1 / 生存扩展模组",
     heroLine1: "Forever",
@@ -53,6 +53,7 @@
     pages: [
       {
         id: "page-world-systems",
+        parentId: null,
         slug: "world-systems",
         navLabel: "世界系统",
         eyebrow: "WORLD SYSTEMS / 01",
@@ -105,6 +106,19 @@
     merged.elementStyles = { ...clone(defaults.elementStyles), ...(input.elementStyles || {}) };
     merged.customElements = Array.isArray(input.customElements) ? input.customElements : [];
     merged.pages = Array.isArray(input.pages) ? input.pages.map((page, index) => ({ ...clone(defaults.pages[0]), ...page, id: page.id || `page-${index + 1}` })) : clone(defaults.pages);
+    const pageMap = new Map(merged.pages.map((page) => [page.id, page]));
+    merged.pages.forEach((page) => {
+      if (!page.parentId || page.parentId === page.id || !pageMap.has(page.parentId)) page.parentId = null;
+    });
+    merged.pages.forEach((page) => {
+      const visited = new Set([page.id]);
+      let parentId = page.parentId;
+      while (parentId) {
+        if (visited.has(parentId)) { page.parentId = null; break; }
+        visited.add(parentId);
+        parentId = pageMap.get(parentId)?.parentId || null;
+      }
+    });
     merged.homeLinks = Object.fromEntries(Object.entries(input.homeLinks || {}).filter(([, pageId]) => merged.pages.some((page) => page.id === pageId)));
     merged.pages.forEach((page) => {
       if (typeof page.ctaUrl === "string") page.ctaUrl = page.ctaUrl.replace(/^\.\/#/, "./index.html#");
@@ -152,11 +166,13 @@
   let saveTimer;
   let toastTimer;
   let selectedElementKey = null;
+  const collapsedElementIds = new Set();
   let elementRegistry = new Map();
   let pickerMode = false;
   const initialPageSlug = new URLSearchParams(location.search).get("page");
   let viewPageId = initialPageSlug ? state.pages.find((page) => page.slug === initialPageSlug)?.id || "missing" : null;
   let activePageId = viewPageId && viewPageId !== "missing" ? viewPageId : state.pages[0]?.id || null;
+  const collapsedPageIds = new Set();
 
   function showToast(message) {
     const toast = $(".toast");
@@ -482,11 +498,34 @@
     const list = $(".element-list"); if (!list) return;
     const query = $("[data-element-search]")?.value.trim().toLowerCase() || "";
     const scope = $("[data-element-scope]")?.value || "";
-    list.innerHTML = "";
-    [...elementRegistry.entries()].filter(([, element]) => (!scope || elementScope(element) === scope) && (!query || elementLabel(element).toLowerCase().includes(query) || element.dataset.elementId.toLowerCase().includes(query))).forEach(([key, element], index) => {
-      const button = document.createElement("button"); button.type = "button"; button.className = `element-list-item${key === selectedElementKey ? " is-selected" : ""}${state.elementStyles[key]?.deleted ? " is-deleted" : ""}`; button.dataset.elementSelect = key; button.setAttribute("role", "option"); button.setAttribute("aria-selected", String(key === selectedElementKey));
-      const number = document.createElement("b"); number.className = "element-list-number"; number.textContent = String(index + 1).padStart(2, "0"); const tag = document.createElement("small"); tag.textContent = elementScope(element); const label = document.createElement("span"); label.textContent = elementLabel(element); button.append(number, tag, label); list.append(button);
+    const entries = [...elementRegistry.entries()].filter(([, element]) => (!scope || elementScope(element) === scope) && (!query || elementLabel(element).toLowerCase().includes(query) || element.dataset.elementId.toLowerCase().includes(query)));
+    const entryMap = new Map(entries);
+    const elementKeys = new Map([...elementRegistry.entries()].map(([key, element]) => [element, key]));
+    const children = new Map();
+    const roots = [];
+    entries.forEach(([key, element]) => {
+      let parent = element.parentElement;
+      while (parent && !elementKeys.has(parent)) parent = parent.parentElement;
+      const parentKey = parent ? elementKeys.get(parent) : null;
+      if (parentKey && entryMap.has(parentKey)) {
+        if (!children.has(parentKey)) children.set(parentKey, []);
+        children.get(parentKey).push(key);
+      } else roots.push(key);
     });
+    list.textContent = "";
+    let index = 0;
+    const appendNode = (key, depth) => {
+      const element = entryMap.get(key); if (!element) return;
+      const hasChildren = Boolean(children.get(key)?.length);
+      const collapsed = collapsedElementIds.has(key);
+      const node = document.createElement("div"); node.className = "element-tree-node"; node.style.setProperty("--element-depth", depth); node.setAttribute("role", "treeitem"); node.setAttribute("aria-level", String(depth + 1));
+      const toggle = document.createElement("button"); toggle.type = "button"; toggle.className = "element-tree-toggle"; toggle.dataset.elementToggle = key; toggle.disabled = !hasChildren; toggle.setAttribute("aria-label", `${collapsed ? "展开" : "折叠"} ${elementLabel(element)}`); if (hasChildren) { node.setAttribute("aria-expanded", String(!collapsed)); toggle.innerHTML = `<i data-lucide="${collapsed ? "chevron-right" : "chevron-down"}"></i>`; }
+      const button = document.createElement("button"); button.type = "button"; button.className = `element-list-item${key === selectedElementKey ? " is-selected" : ""}${state.elementStyles[key]?.deleted ? " is-deleted" : ""}`; button.dataset.elementSelect = key; button.setAttribute("role", "option"); button.setAttribute("aria-selected", String(key === selectedElementKey));
+      const number = document.createElement("b"); number.className = "element-list-number"; number.textContent = String(++index).padStart(2, "0"); const tag = document.createElement("small"); tag.textContent = elementScope(element); const label = document.createElement("span"); label.textContent = elementLabel(element); button.append(number, tag, label); node.append(toggle, button); list.append(node);
+      if (hasChildren && !collapsed) children.get(key).forEach((childKey) => appendNode(childKey, depth + 1));
+    };
+    roots.forEach((key) => appendNode(key, 0));
+    if (window.lucide) window.lucide.createIcons();
   }
 
   function syncElementInspector() {
@@ -550,9 +589,33 @@
     syncPageControls();
   }
 
+  function pageTreeRows() {
+    const children = new Map();
+    state.pages.forEach((page) => {
+      const parentId = page.parentId || null;
+      if (!children.has(parentId)) children.set(parentId, []);
+      children.get(parentId).push(page);
+    });
+    const rows = [];
+    const visit = (parentId, depth) => {
+      (children.get(parentId) || []).forEach((page) => {
+        const pageChildren = children.get(page.id) || [];
+        rows.push({ page, depth, hasChildren: pageChildren.length > 0 });
+        if (pageChildren.length && !collapsedPageIds.has(page.id)) visit(page.id, depth + 1);
+      });
+    };
+    visit(null, 0);
+    return rows;
+  }
+
   function renderPageList() {
     const list = $("[data-page-list]"); if (!list) return;
-    list.innerHTML = state.pages.map((page, index) => `<button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}</small></span></button>`).join("");
+    list.innerHTML = pageTreeRows().map(({ page, depth, hasChildren }) => {
+      const index = state.pages.indexOf(page);
+      const collapsed = collapsedPageIds.has(page.id);
+      return `<div class="page-tree-node" style="--page-depth:${depth}" role="treeitem" aria-level="${depth + 1}"${hasChildren ? ` aria-expanded="${!collapsed}"` : ""}><button type="button" class="page-tree-toggle" data-page-toggle="${escapeHTML(page.id)}" aria-label="${collapsed ? "展开" : "折叠"} ${escapeHTML(page.navLabel || page.title)}"${hasChildren ? "" : " disabled"}>${hasChildren ? `<i data-lucide="${collapsed ? "chevron-right" : "chevron-down"}"></i>` : ""}</button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}</small></span></button></div>`;
+    }).join("");
+    if (window.lucide) window.lucide.createIcons();
   }
 
   function renderHomeLinkControls(page) {
@@ -601,6 +664,26 @@
     if (window.lucide) window.lucide.createIcons();
   }
 
+  function isPageDescendant(pageId, ancestorId) {
+    const visited = new Set();
+    let page = state.pages.find((item) => item.id === pageId);
+    while (page?.parentId) {
+      if (visited.has(page.id)) return false;
+      visited.add(page.id);
+      if (page.parentId === ancestorId) return true;
+      page = state.pages.find((item) => item.id === page.parentId);
+    }
+    return false;
+  }
+
+  function syncPageParentOptions(page) {
+    const select = $("[data-page-field=parentId]");
+    if (!select) return;
+    const current = page.parentId || "";
+    select.innerHTML = `<option value="">根页面</option>${state.pages.filter((candidate) => candidate.id !== page.id && !isPageDescendant(candidate.id, page.id)).map((candidate) => `<option value="${escapeHTML(candidate.id)}">${escapeHTML(candidate.navLabel || candidate.title)}</option>`).join("")}`;
+    select.value = state.pages.some((candidate) => candidate.id === current && candidate.id !== page.id && !isPageDescendant(candidate.id, page.id)) ? current : "";
+  }
+
   function syncPageControls() {
     if (activePageId && !state.pages.some((page) => page.id === activePageId)) activePageId = state.pages[0]?.id || null;
     const page = selectedPage();
@@ -608,6 +691,7 @@
     const inspector = $("[data-page-inspector]"); if (!inspector) return;
     inspector.hidden = !page;
     if (!page) { renderHomeLinkControls(null); return; }
+    syncPageParentOptions(page);
     $$('[data-page-field]', inspector).forEach((input) => { if (document.activeElement === input) return; if (input.type === "checkbox") input.checked = Boolean(page[input.dataset.pageField]); else input.value = page[input.dataset.pageField] ?? ""; });
     const open = $(".page-open"); if (open) open.href = pageUrl(page.slug);
     renderHomeLinkControls(page);
@@ -636,15 +720,15 @@
   $$('[data-collection-select]').forEach((select) => select.addEventListener("change", () => { activeCollection[select.dataset.collectionSelect] = Number(select.value); syncControls(); }));
   $$('[data-collection]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => { state[input.dataset.collection][activeCollection[input.dataset.collection]][input.dataset.field] = input.value; render({ sync: false }); saveState(); }); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
 
-  $("[data-page-list]")?.addEventListener("click", (event) => { const button = event.target.closest("[data-page-select]"); if (!button) return; previewPage(button.dataset.pageSelect); });
+  $("[data-page-list]")?.addEventListener("click", (event) => { const toggle = event.target.closest("[data-page-toggle]"); if (toggle) { const pageId = toggle.dataset.pageToggle; if (collapsedPageIds.has(pageId)) collapsedPageIds.delete(pageId); else collapsedPageIds.add(pageId); renderPageList(); return; } const button = event.target.closest("[data-page-select]"); if (!button) return; previewPage(button.dataset.pageSelect); });
   $$('[data-page-field]').forEach((input) => {
     input.addEventListener("focus", () => { interactionStart = clone(state); });
-    input.addEventListener("input", () => { const page = selectedPage(); if (!page) return; page[input.dataset.pageField] = input.type === "checkbox" ? input.checked : input.value; render({ sync: false }); renderPageList(); saveState(); });
+    input.addEventListener("input", () => { const page = selectedPage(); if (!page) return; const field = input.dataset.pageField; const value = input.type === "checkbox" ? input.checked : input.value; if (field === "parentId" && value && (value === page.id || isPageDescendant(value, page.id))) { input.value = page.parentId || ""; showToast("不能将页面设置为自身或自己的子页"); return; } page[field] = value || (field === "parentId" ? null : value); render({ sync: false }); renderPageList(); saveState(); });
     input.addEventListener("change", () => { const page = selectedPage(); if (page && input.dataset.pageField === "slug") { page.slug = uniqueSlug(input.value, page.id); input.value = page.slug; if (viewPageId === page.id) history.replaceState(null, "", pageUrl(page.slug)); render({ sync: false }); renderPageList(); saveState(); } remember(interactionStart); interactionStart = null; });
   });
-  $(".page-add")?.addEventListener("click", () => { const previous = clone(state); const id = `page-${Date.now().toString(36)}`; const page = { ...clone(defaults.pages[0]), id, slug: uniqueSlug("new-page"), navLabel: "新页面", eyebrow: "NEW PAGE", title: "新的故事页面", summary: "在这里填写页面摘要。", contentTitle: "正文标题", body: "在这里填写完整正文。", published: true }; state.pages.push(page); remember(previous); previewPage(id); saveState(); showToast("已新增并发布子页面"); });
-  $(".page-duplicate")?.addEventListener("click", () => { const source = selectedPage(); if (!source) return; const previous = clone(state); const copy = { ...clone(source), id: `page-${Date.now().toString(36)}`, slug: uniqueSlug(`${source.slug}-copy`), navLabel: `${source.navLabel}副本`, published: false }; state.pages.push(copy); remember(previous); previewPage(copy.id); saveState(); showToast("已复制为草稿"); });
-  $(".page-delete")?.addEventListener("click", () => { const page = selectedPage(); if (!page) return; const previous = clone(state); const customIds = state.customElements.filter((item) => item.pageId === page.id).map((item) => item.id); state.pages = state.pages.filter((item) => item.id !== page.id); state.customElements = state.customElements.filter((item) => item.pageId !== page.id); state.homeLinks = Object.fromEntries(Object.entries(state.homeLinks).filter(([, pageId]) => pageId !== page.id)); Object.keys(state.elementStyles).filter((key) => key.startsWith(`page:${page.id}:`) || customIds.some((id) => key === `custom:${id}`)).forEach((key) => delete state.elementStyles[key]); if (viewPageId === page.id) { viewPageId = null; history.replaceState(null, "", location.pathname); } activePageId = state.pages[0]?.id || null; remember(previous); render(); saveState(); showToast("页面已删除，可撤销"); });
+  $(".page-add")?.addEventListener("click", () => { const previous = clone(state); const id = `page-${Date.now().toString(36)}`; const parentId = selectedPage()?.id || null; const page = { ...clone(defaults.pages[0]), id, parentId, slug: uniqueSlug("new-page"), navLabel: "新页面", eyebrow: "NEW PAGE", title: "新的故事页面", summary: "在这里填写页面摘要。", contentTitle: "正文标题", body: "在这里填写完整正文。", published: true }; state.pages.push(page); remember(previous); previewPage(id); saveState(); showToast(parentId ? "已新增子页面" : "已新增根页面"); });
+  $(".page-duplicate")?.addEventListener("click", () => { const source = selectedPage(); if (!source) return; const previous = clone(state); const copy = { ...clone(source), id: `page-${Date.now().toString(36)}`, parentId: source.parentId || null, slug: uniqueSlug(`${source.slug}-copy`), navLabel: `${source.navLabel}副本`, published: false }; state.pages.push(copy); remember(previous); previewPage(copy.id); saveState(); showToast("已复制为草稿"); });
+  $(".page-delete")?.addEventListener("click", () => { const page = selectedPage(); if (!page) return; const previous = clone(state); const parentId = page.parentId || null; const customIds = state.customElements.filter((item) => item.pageId === page.id).map((item) => item.id); state.pages.forEach((item) => { if (item.parentId === page.id) item.parentId = parentId; }); state.pages = state.pages.filter((item) => item.id !== page.id); collapsedPageIds.delete(page.id); state.customElements = state.customElements.filter((item) => item.pageId !== page.id); state.homeLinks = Object.fromEntries(Object.entries(state.homeLinks).filter(([, pageId]) => pageId !== page.id)); Object.keys(state.elementStyles).filter((key) => key.startsWith(`page:${page.id}:`) || customIds.some((id) => key === `custom:${id}`)).forEach((key) => delete state.elementStyles[key]); if (viewPageId === page.id) { viewPageId = null; history.replaceState(null, "", location.pathname); } activePageId = state.pages[0]?.id || null; remember(previous); render(); saveState(); showToast("页面已删除，子页面已提升，可撤销"); });
   $(".page-copy-link")?.addEventListener("click", async () => { const page = selectedPage(); if (!page) return; const url = new URL(pageUrl(page.slug), location.href).href; try { await navigator.clipboard.writeText(url); showToast("页面链接已复制"); } catch { showToast(url); } });
   $(".page-home-connect")?.addEventListener("click", () => {
     const page = selectedPage();
@@ -669,6 +753,8 @@
   });
 
   $(".element-list")?.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-element-toggle]");
+    if (toggle) { const key = toggle.dataset.elementToggle; if (collapsedElementIds.has(key)) collapsedElementIds.delete(key); else collapsedElementIds.add(key); renderElementList(); return; }
     const button = event.target.closest("[data-element-select]"); if (!button) return;
     selectedElementKey = button.dataset.elementSelect; renderElementList(); applyElementStyles(); syncElementInspector();
     elementRegistry.get(selectedElementKey)?.scrollIntoView({ behavior: "smooth", block: "center" });

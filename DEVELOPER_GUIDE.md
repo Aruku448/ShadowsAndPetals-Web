@@ -129,7 +129,7 @@
 
 子页面保存在 `state.pages[]`，字段包括：
 
-- 身份与导航：`id`、`slug`、`navLabel`、`published`
+- 身份与导航：`id`、`slug`、`navLabel`、`parentId`、`published`
 - 首屏：`eyebrow`、`title`、`summary`、`heroImage`
 - 正文：`contentTitle`、`body`
 - 行动按钮：`ctaLabel`、`ctaUrl`

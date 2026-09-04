@@ -1,5 +1,5 @@
 {
-  "configVersion": 5,
+  "configVersion": 6,
   "brand": "织影落花",
   "kicker": "NEOFORGE 1.21.1 / 26.1.2 / 生存扩展模组",
   "heroLine1": "织影落花",
@@ -20,7 +20,7 @@
   "sustainabilityBody": "诚邀您与我们\n一起完善\n《织影落花集》",
   "downloadTitle": "诚邀您\n翻开我们这本\n《织影落花集》",
   "downloadLabel": "下载 V1.0 teacon",
-  "downloadUrl": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon",
+  "downloadUrl": "#https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon#",
   "version": "V2.4.0",
   "releaseDate": "2026.08.21",
   "loader": "Neoforge 1.21.1 / 26.1.2",
@@ -241,7 +241,7 @@
       "positionMode": "flow"
     },
     "download:a:0": {
-      "href": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon"
+      "href": "c"
     },
     "showreel:p:0": {
       "text": "Shadows&Petals/ 🫓"
@@ -271,6 +271,7 @@
   "pages": [
     {
       "id": "page-world-systems",
+      "parentId": null,
       "slug": "2026-teacon",
       "navLabel": "2026 TeaCon展会",
       "eyebrow": "2026TeaCon",
@@ -285,6 +286,7 @@
     },
     {
       "id": "page-mtiu1mqy",
+      "parentId": null,
       "slug": "update2026-3",
       "navLabel": "2026第三季度更新",
       "eyebrow": "2026第三季度更新",
@@ -299,6 +301,7 @@
     },
     {
       "id": "page-mtixltw8",
+      "parentId": null,
       "slug": "contactus",
       "navLabel": "联系我们",
       "eyebrow": "联系我们",
@@ -313,6 +316,7 @@
     },
     {
       "id": "page-mtjjlqg5",
+      "parentId": null,
       "slug": "academic-jhana",
       "navLabel": "概念：雅韵与禅宗文化",
       "eyebrow": "概念：雅韵与禅宗",
@@ -327,6 +331,7 @@
     },
     {
       "id": "page-mtkh3cix",
+      "parentId": null,
       "slug": "memberlist",
       "navLabel": "开发组制作成员",
       "eyebrow": "织影落花制作组成员",
@@ -501,7 +506,7 @@
     }
   ],
   "configMeta": {
-    "revision": 6,
-    "updatedAt": "2026-09-03 20:34"
+    "revision": 8,
+    "updatedAt": "2026-09-04 09:58"
   }
 }
