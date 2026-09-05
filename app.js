@@ -309,8 +309,27 @@
       .replace(/:([a-z0-9_+-]+):/gi, (match, name) => emoji[name.toLowerCase()] || match);
   }
 
+  function formatLegacyPage(source, slug) {
+    if (slug === "update2026-3") return source
+      .replace(/^>\s*【([^】\n]+)】相关更新：\s*$/gm, "### $1相关更新")
+      .replace(/^>\s*$/gm, "")
+      .replace(/^>\s?/gm, "")
+      .replace(/^\t+/gm, (tabs) => "  ".repeat(Math.min(tabs.length, 3)));
+    if (slug === "contactus") return source.replace(/^\s*([①②③④⑤])：\s*/gm, (_, marker) => `${"①②③④⑤".indexOf(marker) + 1}. `);
+    if (slug === "academic-jhana") return source
+      .replace(/^【(“公家”和“武家”分别是什么？|雅韵：时间的记忆|禅宗：雅韵的对板)】\s*$/gm, "### $1")
+      .replace(/^【([^】\n]+)】\s*$/gm, "> **$1**");
+    if (slug === "memberlist") {
+      const marker = "以下人员按照首字母顺序排列，并不代表贡献高低";
+      return source
+        .replace(new RegExp(`^【${marker}】\\s*$`, "m"), `### ${marker}`)
+        .replace(new RegExp(`(### ${marker}\\n)([\\s\\S]*)$`), (_, heading, names) => `${heading}\n${names.replace(/^\\s*(\\S.*)$/gm, "- $1")}`);
+    }
+    return source;
+  }
+
   function pageMarkdown(page) {
-    const source = markdownSource(String(page.body || ""));
+    const source = formatLegacyPage(markdownSource(String(page.body || "")), page.slug);
     if (!window.marked || !window.DOMPurify) return `<p>${escapeHTML(source).replace(/\n/g, "<br />")}</p>`;
     const parser = window.markedFootnote ? new window.marked.Marked().use(window.markedFootnote()) : window.marked;
     const raw = parser.parse(source, { gfm: true, breaks: true, headerIds: false });
