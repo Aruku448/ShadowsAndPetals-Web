@@ -832,7 +832,9 @@ html:not(.js-enabled) .page-loader { display: none; }
 
 /* Desktop story slides: every split page occupies at least one 16:9 frame. */
 @media (min-width: 987px) {
-  main > section:not(.hero) { min-height: max(100svh, 56.25vw) !important; }
+  main > section:not(.hero):not(.manifesto) { min-height: max(100svh, 56.25vw) !important; }
+  /* 宣言区不再占满一屏：回落 .manifesto 基础 min-height 760px，内容自然高 + 适度留白 */
+  main > section.manifesto { min-height: 760px !important; }
   main > section.showreel { height: auto; }
   main > section.sustainability .sustainability-panel { min-height: max(100svh, 56.25vw); }
 }
