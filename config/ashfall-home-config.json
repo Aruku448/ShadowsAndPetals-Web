@@ -21,7 +21,7 @@
   "downloadTitle": "诚邀您\n翻开我们这本\n《织影落花集》",
   "downloadLabel": "下载 V1.0 teacon",
   "downloadUrl": "https://github.com/SShakusora/ShadowsAndPetals/tree/26.1.2/Teacon",
-  "version": "V2.4.0",
+  "version": "Teacon 特供版",
   "releaseDate": "2026.08.21",
   "loader": "NeoForge 1.21.1 / 26.1.2",
   "trailerVideo": "<iframe src=\"//player.bilibili.com/player.html?isOutside=true&aid=834197803&bvid=BV1Pg4y1f7Bp&cid=1352225969&p=1\" scrolling=\"no\" border=\"0\" frameborder=\"no\" framespacing=\"0\" allowfullscreen=\"true\"></iframe>",
@@ -308,6 +308,9 @@
       "id": "page-world-systems",
       "parentId": null,
       "slug": "2026-teacon",
+      "tags": [
+        "2026TeaCon"
+      ],
       "navLabel": "2026 TeaCon展会",
       "eyebrow": "2026TeaCon",
       "title": "2026 TeaCon 展会\n织影落花 的 初次见面\n",
@@ -323,6 +326,9 @@
       "id": "page-mtiu1mqy",
       "parentId": "page-mtnvddkt",
       "slug": "update2026-3",
+      "tags": [
+        "2026第三季度更新"
+      ],
       "navLabel": "2026第三季度更新",
       "eyebrow": "2026第三季度更新",
       "title": "织影落花 的\n2026年 第三季度 更新",
@@ -338,6 +344,9 @@
       "id": "page-mtixltw8",
       "parentId": null,
       "slug": "contactus",
+      "tags": [
+        "联系我们"
+      ],
       "navLabel": "联系我们",
       "eyebrow": "联系我们",
       "title": "诚邀您与我们一起完善\n《织影落花集》",
@@ -353,6 +362,9 @@
       "id": "page-mtjjlqg5",
       "parentId": null,
       "slug": "academic-jhana",
+      "tags": [
+        "概念：雅韵与禅宗"
+      ],
       "navLabel": "概念：雅韵与禅宗文化",
       "eyebrow": "概念：雅韵与禅宗",
       "title": "概念：雅韵与禅宗文化",
@@ -368,6 +380,9 @@
       "id": "page-mtkh3cix",
       "parentId": null,
       "slug": "memberlist",
+      "tags": [
+        "织影落花制作组成员"
+      ],
       "navLabel": "开发组制作成员",
       "eyebrow": "织影落花制作组成员",
       "title": "《织影落花集》\n的作者们",
@@ -383,6 +398,9 @@
       "id": "page-mtn7pvkp",
       "parentId": null,
       "slug": "new-page",
+      "tags": [
+        "NEW PAGE"
+      ],
       "navLabel": "渲染测试",
       "eyebrow": "NEW PAGE",
       "title": "《生年不滿百，何不秉烛游》\n",
@@ -396,8 +414,11 @@
     },
     {
       "id": "page-mtneiqia",
-      "parentId": "page-mtn7pvkp",
+      "parentId": null,
       "slug": "new-page-2",
+      "tags": [
+        "NEW PAGE"
+      ],
       "navLabel": "全渲染测试",
       "eyebrow": "NEW PAGE",
       "title": "全渲染测试\n",
@@ -411,8 +432,11 @@
     },
     {
       "id": "page-mtnqhpbv",
-      "parentId": "page-mtn7pvkp",
+      "parentId": null,
       "slug": "new-page-3",
+      "tags": [
+        "NEW PAGE"
+      ],
       "navLabel": "超长文字测试",
       "eyebrow": "NEW PAGE",
       "title": "《ARCHIV-EAST》\n",
@@ -428,6 +452,9 @@
       "id": "page-mtns35bx",
       "parentId": null,
       "slug": "paradigme",
+      "tags": [
+        "深度"
+      ],
       "navLabel": "深度：《概念》",
       "eyebrow": "深度",
       "title": "《概念》",
@@ -441,8 +468,11 @@
     },
     {
       "id": "page-mtns36dl",
-      "parentId": "page-mtns35bx",
+      "parentId": null,
       "slug": "new-page-5",
+      "tags": [
+        "测试"
+      ],
       "navLabel": "测试",
       "eyebrow": "测试",
       "title": "新的故事页面",
@@ -458,6 +488,9 @@
       "id": "page-mtnsprmd",
       "parentId": null,
       "slug": "shadowsandpetalssummary",
+      "tags": [
+        "织影落花Mod"
+      ],
       "navLabel": "织影落花 Mod 内容",
       "eyebrow": "织影落花Mod",
       "title": "欢迎来到：织影落花",
@@ -471,8 +504,11 @@
     },
     {
       "id": "page-mtnsvi4k",
-      "parentId": "page-mtnsprmd",
+      "parentId": null,
       "slug": "nihonteien",
+      "tags": [
+        "织影落花 Mod 内容"
+      ],
       "navLabel": "宏观 & 微观 庭院",
       "eyebrow": "织影落花 Mod 内容",
       "title": "雅韵 & 禅宗 庭院",
@@ -486,8 +522,11 @@
     },
     {
       "id": "page-mtnsvnlx",
-      "parentId": "page-mtnsprmd",
+      "parentId": null,
       "slug": "sekai",
+      "tags": [
+        "织影落花 Mod 内容"
+      ],
       "navLabel": "自然 & 方块 世界",
       "eyebrow": "织影落花 Mod 内容",
       "title": "自然 & 方块 世界",
@@ -501,8 +540,11 @@
     },
     {
       "id": "page-mtnsvok3",
-      "parentId": "page-mtnsprmd",
+      "parentId": null,
       "slug": "kugu",
+      "tags": [
+        "织影落花 Mod 内容"
+      ],
       "navLabel": "家具 & 设施 摆件",
       "eyebrow": "织影落花 Mod 内容",
       "title": "家具 & 设施 摆件",
@@ -516,8 +558,11 @@
     },
     {
       "id": "page-mtnsvpjl",
-      "parentId": "page-mtnsprmd",
+      "parentId": null,
       "slug": "buppin",
+      "tags": [
+        "织影落花 MOd 内容"
+      ],
       "navLabel": "工具 & 器皿 物械",
       "eyebrow": "织影落花 MOd 内容",
       "title": "工具 & 器皿 物械",
@@ -531,8 +576,11 @@
     },
     {
       "id": "page-mtnsvqco",
-      "parentId": "page-mtnsprmd",
+      "parentId": null,
       "slug": "syokuhin",
+      "tags": [
+        "织影落花 Mod 内容"
+      ],
       "navLabel": "农桑 & 菜品 饮食",
       "eyebrow": "织影落花 Mod 内容",
       "title": "农桑 & 菜品 饮食",
@@ -546,8 +594,11 @@
     },
     {
       "id": "page-mtnups5y",
-      "parentId": "page-mtnsprmd",
+      "parentId": null,
       "slug": "jouju",
+      "tags": [
+        "织影落花 Mod 内容"
+      ],
       "navLabel": "成就 & 挑战 妙法",
       "eyebrow": "织影落花 Mod 内容",
       "title": "成就 & 挑战 妙法",
@@ -563,6 +614,9 @@
       "id": "page-mtnvddkt",
       "parentId": null,
       "slug": "updatesummary",
+      "tags": [
+        "更新汇总"
+      ],
       "navLabel": "更新汇总",
       "eyebrow": "更新汇总",
       "title": "织影落花 更新汇总",
@@ -737,6 +791,7 @@
   ],
   "configMeta": {
     "revision": 21,
-    "updatedAt": "2026-09-05 09:52"
+    "updatedAt": "2026-09-06 01:17"
   }
 }
+

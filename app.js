@@ -60,6 +60,7 @@
         id: "page-world-systems",
         parentId: null,
         slug: "2026-teacon",
+        tags: ["展会"],
         navLabel: "2026 TeaCon展会",
         eyebrow: "2026TeaCon",
         title: "2026 TeaCon 展会\n织影落花 的 初次见面",
@@ -106,24 +107,18 @@
     ].map(([title, caption, image]) => ({ title, caption, image })),
   };
 
+  function normalizePageTags(value) {
+    const values = Array.isArray(value) ? value : String(value || "").split(/[,，、\n]/);
+    return [...new Set(values.map((tag) => String(tag ?? "").trim()).filter(Boolean))].slice(0, 3);
+  }
+
   function mergeConfig(input = {}) {
     const merged = { ...clone(defaults), ...input };
     merged.elementStyles = { ...clone(defaults.elementStyles), ...(input.elementStyles || {}) };
     merged.customElements = Array.isArray(input.customElements) ? input.customElements : [];
-    merged.pages = Array.isArray(input.pages) ? input.pages.map((page, index) => ({ ...clone(defaults.pages[0]), ...page, id: page.id || `page-${index + 1}` })) : clone(defaults.pages);
-    const pageMap = new Map(merged.pages.map((page) => [page.id, page]));
-    merged.pages.forEach((page) => {
-      if (!page.parentId || page.parentId === page.id || !pageMap.has(page.parentId)) page.parentId = null;
-    });
-    merged.pages.forEach((page) => {
-      const visited = new Set([page.id]);
-      let parentId = page.parentId;
-      while (parentId) {
-        if (visited.has(parentId)) { page.parentId = null; break; }
-        visited.add(parentId);
-        parentId = pageMap.get(parentId)?.parentId || null;
-      }
-    });
+    merged.pages = Array.isArray(input.pages) ? input.pages.map((page, index) => ({ ...clone(defaults.pages[0]), ...page, id: page.id || `page-${index + 1}`, tags: normalizePageTags(page.tags ?? page.eyebrow) })) : clone(defaults.pages);
+    // 文章管理不再使用父子关系；保留旧字段仅用于兼容已有配置，不参与展示或导航。
+    merged.pages.forEach((page) => { page.parentId = null; });
     merged.homeLinks = Object.fromEntries(Object.entries(input.homeLinks || {}).filter(([, pageId]) => merged.pages.some((page) => page.id === pageId)));
     merged.pages.forEach((page) => {
       if (typeof page.ctaUrl === "string") page.ctaUrl = page.ctaUrl.replace(/^\.\/#/, "./index.html#");
@@ -221,7 +216,7 @@
   }
 
   function homeUrl(hash = "") { return `./index.html${String(hash || "").startsWith("#") ? hash : ""}`; }
-  function pageUrl(slug) { return `./index.html?page=${encodeURIComponent(slug)}`; }
+  function pageUrl(slug, returnUrl = "") { const params = new URLSearchParams({ page: slug }); if (returnUrl) params.set("from", returnUrl); return `./index.html?${params}`; }
   function selectedPage() { return state.pages.find((page) => page.id === activePageId) || null; }
   function viewedPage() { return state.pages.find((page) => page.id === viewPageId) || null; }
   function cleanSlug(value) { return String(value || "page").trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff-]+/g, "-").replace(/^-+|-+$/g, "") || "page"; }
@@ -234,8 +229,15 @@
     return page;
   }
   function previewPage(id) { const page = state.pages.find((item) => item.id === id); if (!page) return; viewPageId = page.id; activePageId = page.id; history.pushState(null, "", pageUrl(page.slug)); selectedElementKey = null; render(); window.scrollTo({ top: 0, behavior: "auto" }); }
+
   function previewPageFromUrl(url) { history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`); syncViewedPageFromLocation(); selectedElementKey = null; render(); window.scrollTo({ top: 0, behavior: "auto" }); return viewPageId !== "missing"; }
 
+  function playPageInstanceTransition(container) {
+    if (!container) return;
+    container.classList.remove("page-instance-entering");
+    void container.offsetWidth;
+    container.classList.add("page-instance-entering");
+  }
   function homeLinkTargetLabel(element) {
     const kind = element.matches("img") ? "图片" : "按钮";
     const newsIndex = element.closest(".news-card")?.dataset.newsIndex;
@@ -285,12 +287,76 @@
     });
   }
 
-  function renderPageNavigation() {
-    const pages = state.pages.filter((page) => page.published);
-    const desktop = $("[data-page-nav]");
-    const menu = $("[data-page-menu]");
-    if (desktop) desktop.innerHTML = pages.map((page) => `<a href="${pageUrl(page.slug)}">${escapeHTML(page.navLabel || page.title)}</a>`).join("");
-    if (menu) menu.innerHTML = pages.map((page, index) => `<a href="${pageUrl(page.slug)}"><span>${String(index + 5).padStart(2, "0")}</span>${escapeHTML(page.navLabel || page.title)}</a>`).join("");
+  function renderPageNavigation() {}
+
+  function pageDirectoryUrl(page = 1, category = "", query = "") { const params = new URLSearchParams({ view: "pages", page: String(page) }); if (category) params.set("tag", category); if (query) params.set("q", query); return `./index.html?${params}`; }
+  function applyDirectoryImageRatio(image) {
+    if (!image?.naturalWidth || !image.naturalHeight) return;
+    const ratio = Math.min(1.55, Math.max(.82, image.naturalWidth / image.naturalHeight));
+    image.parentElement?.style.setProperty("--directory-image-ratio", ratio.toFixed(3));
+  }
+
+  function scrollDirectoryToHeroBottom() {
+    const hero = $("[data-page-directory] .directory-hero");
+    const header = $(".site-header");
+    if (!hero) return;
+    const top = window.scrollY + hero.getBoundingClientRect().bottom - (header?.offsetHeight || 0);
+    window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+  }
+
+  function renderPageDirectory({ animate = true } = {}) {
+    const directory = $("[data-page-directory]");
+    if (!directory) return;
+    const params = new URLSearchParams(location.search);
+    const currentPage = Math.max(1, Number(params.get("page")) || 1);
+    const category = params.get("tag") || "";
+    const query = params.get("q") || "";
+    const allPages = state.pages.filter((page) => (!category || (page.tags || []).includes(category)) && (!query || normalizeSearchText(searchPageText(page)).includes(normalizeSearchText(query))));
+    const categories = [...new Set(state.pages.flatMap((page) => page.tags || []))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    const pageSize = 6;
+    const totalPages = Math.max(1, Math.ceil(allPages.length / pageSize));
+    const safePage = Math.min(currentPage, totalPages);
+    const items = allPages.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const directoryHeroImages = [...new Set(items.map((page) => page.heroImage).filter(Boolean))];
+    for (let index = directoryHeroImages.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [directoryHeroImages[index], directoryHeroImages[swapIndex]] = [directoryHeroImages[swapIndex], directoryHeroImages[index]];
+    }
+    const wallImages = directoryHeroImages.length ? directoryHeroImages : ["assets/hero-ashfall.png"];
+    directory.hidden = false;
+    directory.innerHTML = `<section class="directory-hero"><div class="section-tag"><span>07</span><p>文章 / Archive</p></div><div><h1>织影落花集<br /><br /><br /></h1><p>通过标签浏览文章。文章之间彼此独立，不再受页面层级限制。</p></div></section><section class="directory-toolbar"><div class="directory-toolbar-controls"><form class="directory-search" data-directory-search-form><label for="directory-search-input">搜索文章</label><div><i data-lucide="search" aria-hidden="true"></i><input id="directory-search-input" type="search" data-directory-search value="${escapeHTML(query)}" placeholder="标题、摘要或正文" /><button class="icon-button" type="submit" aria-label="搜索文章" data-tooltip="搜索"><i data-lucide="arrow-right"></i></button></div></form><div class="directory-filter"><span class="directory-filter-title">按标签筛选</span><button class="directory-filter-trigger" type="button" data-directory-category-trigger aria-haspopup="listbox" aria-expanded="false"><span data-directory-category-label>${escapeHTML(category || "全部文章")}</span><i data-lucide="chevron-down" aria-hidden="true"></i></button><div class="page-outline-panel directory-filter-menu" data-directory-category-menu aria-label="按标签筛选" hidden><div class="outline-header"><span>按标签筛选</span><button class="icon-button outline-close" type="button" data-directory-category-close aria-label="关闭筛选"><i data-lucide="x" aria-hidden="true"></i></button></div><nav>${["", ...categories].map((item) => `<a href="#" class="outline-level-3${item === category ? " is-active" : ""}" data-category-value="${escapeHTML(item)}">${item ? escapeHTML(item) : "全部文章"}</a>`).join("")}</nav></div></div></div><p>${allPages.length} 篇文章</p></section><section class="directory-grid">${items.map((page, index) => `<a class="directory-card${index === 0 && safePage === 1 ? " directory-card-featured" : ""}" href="${pageUrl(page.slug, `${location.pathname}${location.search}`)}"><div class="directory-card-image story-media"><img src="${escapeHTML(page.heroImage)}" alt="" loading="lazy" decoding="async" data-directory-card-image /></div><div class="directory-card-content"><div class="directory-card-tags">${(page.tags || []).map((tag) => `<span>${escapeHTML(tag)}</span>`).join("")}</div><h2>${escapeHTML(page.title || "未命名页面").replace(/\n/g, "<br />")}</h2><p>${escapeHTML(page.summary || "暂无摘要")}</p><i data-lucide="arrow-up-right"></i></div></a>`).join("")}</section><nav class="directory-pagination" aria-label="文章分页">${Array.from({ length: totalPages }, (_, index) => `<a href="${pageDirectoryUrl(index + 1, category, query)}"${index + 1 === safePage ? " aria-current=\"page\"" : ""}>${String(index + 1).padStart(2, "0")}</a>`).join("")}</nav>`;
+    const hero = directory.querySelector(".directory-hero");
+    if (hero) {
+      hero.classList.add("directory-hero-cover");
+      const wall = document.createElement("div"); wall.className = "directory-hero-wall"; wall.setAttribute("aria-hidden", "true");
+      const wallRows = 5;
+      wall.innerHTML = Array.from({ length: wallRows }, (_, row) => {
+        const rowImages = [...wallImages.slice(row % wallImages.length), ...wallImages.slice(0, row % wallImages.length)];
+        const sources = [...rowImages, ...rowImages, ...rowImages];
+        return `<div class="directory-hero-wall-track" style="--wall-row:${row}">${sources.map((source) => `<img class="directory-hero-wall-tile" src="${escapeHTML(source)}" alt="" loading="lazy" decoding="async" />`).join("")}</div>`;
+      }).join("");
+      hero.prepend(wall);
+      const overlay = document.createElement("div"); overlay.className = "directory-hero-overlay"; overlay.setAttribute("aria-hidden", "true"); hero.prepend(overlay);
+      const back = document.createElement("a"); back.className = "directory-back"; back.href = homeUrl(); back.dataset.homeLink = ""; back.innerHTML = '<span aria-hidden="true">←</span> 首页'; hero.append(back);
+    }
+    directory.querySelectorAll("[data-directory-card-image]").forEach((image) => { image.addEventListener("load", () => applyDirectoryImageRatio(image), { once: true }); applyDirectoryImageRatio(image); });
+    const directorySearch = directory.querySelector("[data-directory-search]");
+    directorySearch?.addEventListener("input", (event) => {
+      const value = event.target.value.trim();
+      const url = new URL(location.href);
+      url.searchParams.set("view", "pages");
+      url.searchParams.set("page", "1");
+      if (value) url.searchParams.set("q", value); else url.searchParams.delete("q");
+      history.replaceState(null, "", `${url.pathname}${url.search}`);
+      renderPageDirectory();
+      const nextSearch = directory.querySelector("[data-directory-search]");
+      if (nextSearch) { nextSearch.focus(); nextSearch.setSelectionRange(value.length, value.length); }
+    });
+    directory.querySelector("[data-directory-search-form]")?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      directorySearch?.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    if (window.lucide) window.lucide.createIcons();
   }
 
   function revealHeroMedia(image) {
@@ -389,12 +455,35 @@
 
   function closePageOutline() { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-toggle]"); if (!panel || !toggle) return; if (panel.contains(document.activeElement)) toggle.focus(); const mobile = window.matchMedia("(max-width: 986px)").matches; panel.classList.remove("is-open"); panel.setAttribute("aria-hidden", String(mobile)); panel.inert = mobile; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-label", "打开文章大纲"); }
 
+  function closeFilterMenu() { const menu = $("[data-directory-category-menu]"); if (!menu || !menu.classList.contains("is-open")) return; menu.classList.remove("is-open"); menu.setAttribute("hidden", ""); menu.parentElement?.querySelector("[data-directory-category-trigger]")?.setAttribute("aria-expanded", "false"); }
+
   function togglePageOutline(open = null) { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-header-toggle]"); if (!panel || !toggle) return; const next = open == null ? !panel.classList.contains("is-open") : open; if (next) { panel.inert = false; panel.setAttribute("aria-hidden", "false"); } panel.classList.toggle("is-open", next); toggle.setAttribute("aria-expanded", String(next)); toggle.setAttribute("aria-label", next ? "关闭文章大纲" : "打开文章大纲"); if (next) panel.querySelector("a")?.focus(); else closePageOutline(); }
 
-  function renderSubpage() {
+  function renderSubpage({ animate = true } = {}) {
+    const directory = $("[data-page-directory]");
     const view = $("[data-subpage-view]");
-    const homeSections = $$("main > section");
+    const params = new URLSearchParams(location.search);
+    const homeSections = $("main") ? $$("main > section") : [];
+    if (params.get("view") === "pages") {
+      homeSections.forEach((section) => { section.hidden = true; });
+      if (view) view.hidden = true;
+      document.body.classList.remove("is-subpage");
+      document.body.classList.add("is-directory");
+      if (animate) playPageInstanceTransition(directory);
+      renderPageDirectory({ animate: false });
+      return null;
+    }
+    if (directory) { directory.hidden = true; directory.innerHTML = ""; }
+    document.body.classList.remove("is-directory");
     const page = viewedPage();
+    let directoryBackUrl = pageDirectoryUrl(1);
+    const returnUrl = params.get("from");
+    if (returnUrl) {
+      try {
+        const candidate = new URL(returnUrl, location.href);
+        if (candidate.origin === location.origin && candidate.pathname === location.pathname && candidate.searchParams.get("view") === "pages") directoryBackUrl = `${candidate.pathname}${candidate.search}${candidate.hash}`;
+      } catch {}
+    }
     const outlineHeaderToggle = $("[data-page-outline-header-toggle]");
     if (outlineHeaderToggle) outlineHeaderToggle.hidden = !viewPageId || !page;
     document.body.classList.toggle("is-subpage", Boolean(viewPageId));
@@ -406,6 +495,7 @@
     }
     homeSections.forEach((section) => { section.hidden = true; });
     view.hidden = false;
+    if (animate) playPageInstanceTransition(view);
     if (!page) {
       view.dataset.pageId = "missing";
       view.innerHTML = `<section class="subpage-missing section-dark" id="page-top"><p>404 / PAGE NOT FOUND</p><h1>这个页面尚不存在</h1><a class="inline-cta" href="${homeUrl()}" data-home-link>返回首页</a></section>`;
@@ -421,9 +511,9 @@
     const next = nextPages[0];
     view.innerHTML = `
       <section class="subpage-hero" id="page-top">
-        <img class="subpage-hero-media" src="${escapeHTML(page.heroImage)}" alt="" data-page-image-display="heroImage" />
+        <img class="subpage-hero-media is-loaded" src="${escapeHTML(page.heroImage)}" alt="" decoding="async" fetchpriority="high" data-page-image-display="heroImage" />
         <div class="subpage-hero-overlay" aria-hidden="true"></div>
-        <a class="subpage-back" href="${homeUrl()}" data-home-link><span aria-hidden="true">←</span> 首页</a>
+        <a class="subpage-back" href="${directoryBackUrl}"><span aria-hidden="true">←</span> 织影落花集</a>
         <p class="subpage-eyebrow" data-page-field-display="eyebrow">${escapeHTML(page.eyebrow)}</p>
         <h1 class="subpage-heading" data-page-field-display="title">${title}</h1>
         <p class="subpage-summary" data-page-field-display="summary">${escapeHTML(page.summary)}</p>
@@ -435,14 +525,14 @@
           <div class="markdown-body" data-page-field-display="body" data-page-markdown></div>
           <div class="subpage-actions"><a class="inline-cta dark" href="${escapeHTML(page.ctaUrl || "#")}" data-page-cta data-page-field-display="ctaLabel">${escapeHTML(page.ctaLabel)} <span class="double-arrow" data-element-key="page:${escapeHTML(page.id)}:content:cta-arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a></div>
         </div>
-        <aside class="page-outline-panel" data-page-outline-panel aria-label="文章大纲" aria-hidden="false"><div class="outline-header"><span>文章大纲</span><button class="icon-button outline-close" type="button" data-page-outline-close aria-label="关闭大纲"><i data-lucide="x"></i></button></div><nav data-page-outline></nav></aside>
+        <aside class="page-outline-panel" data-page-outline-panel aria-label="文章大纲" aria-hidden="true"><div class="outline-header"><span>文章大纲</span><button class="icon-button outline-close" type="button" data-page-outline-close aria-label="关闭大纲"><i data-lucide="x"></i></button></div><nav data-page-outline></nav></aside>
       </section>
       <section class="subpage-next section-dark${next ? "" : " is-home-return"}" id="page-next">
         <p>继续探索</p>
-        ${next ? `<a href="${pageUrl(next.slug)}"><span class="subpage-next-meta">${escapeHTML(next.eyebrow)}</span><strong>${escapeHTML(next.title).replace(/\n/g, " ")}</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>` : `<a href="${homeUrl("#download")}" data-home-link="#download"><span class="subpage-next-meta">织影落花</span><strong>返回首页继续探索</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>`}
+        ${next ? `<a href="${pageUrl(next.slug, params.get("from") || "")}"><span class="subpage-next-meta">${escapeHTML(next.eyebrow)}</span><strong>${escapeHTML(next.title).replace(/\n/g, " ")}</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>` : `<a href="${homeUrl("#download")}" data-home-link="#download"><span class="subpage-next-meta">织影落花</span><strong>返回首页继续探索</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>`}
       </section>`;
     renderPageMarkdown(page);
-    if (window.matchMedia("(max-width: 986px)").matches) closePageOutline();
+    closePageOutline();
     if (window.lucide) window.lucide.createIcons();
     revealHeroMedia($(".subpage-hero-media", view));
     document.title = `${page.title.replace(/\n/g, " ")} — ${state.brand}`;
@@ -451,7 +541,7 @@
 
   function renderNews() {
     const rail = $(".news-rail");
-    rail.innerHTML = state.news.map((item, index) => `<article class="news-card reveal-card" data-news-index="${index}"><div class="news-card-image"><img src="${item.image}" alt="${item.title}" loading="lazy" /><div class="news-card-content"><div class="news-meta"><p>${item.tag}</p><p><span>${String(index + 1).padStart(2, "0")}</span>/16 · ${item.date}</p></div><h3>${item.title}</h3><p>${item.body}</p><a href="#download" class="card-cta">查看更新 <span class="double-arrow"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a></div></div></article>`).join("");
+    rail.innerHTML = state.news.map((item, index) => `<article class="news-card reveal-card" data-news-index="${index}"><div class="news-card-image"><img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async" /><div class="news-card-content"><div class="news-meta"><p>${item.tag}</p><p><span>${String(index + 1).padStart(2, "0")}</span>/16 · ${item.date}</p></div><h3>${item.title}</h3><p>${item.body}</p><a href="#download" class="card-cta">查看更新 <span class="double-arrow"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a></div></div></article>`).join("");
     rail.querySelectorAll(".news-card").forEach((card, index) => { card.addEventListener("mouseenter", () => setActiveNews(index)); card.addEventListener("focusin", () => setActiveNews(index)); });
     if (window.lucide) window.lucide.createIcons();
     observeReveals();
@@ -459,7 +549,7 @@
 
   function renderExpertise() {
     const list = $(".expertise-list");
-    list.innerHTML = state.expertise.map((item, index) => `<article class="expertise-item reveal-card" data-expertise-index="${index}"><div class="expertise-number">${String(index + 1).padStart(2, "0")}</div><div><h3>${item.title}</h3><p>${item.caption}</p></div><div class="expertise-thumb"><img src="${item.image}" alt="${item.title}" loading="lazy" /></div><span class="item-arrow"><i data-lucide="arrow-up-right"></i></span></article>`).join("");
+    list.innerHTML = state.expertise.map((item, index) => `<article class="expertise-item reveal-card" data-expertise-index="${index}"><div class="expertise-number">${String(index + 1).padStart(2, "0")}</div><div><h3>${item.title}</h3><p>${item.caption}</p></div><div class="expertise-thumb"><img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async" /></div><span class="item-arrow"><i data-lucide="arrow-up-right"></i></span></article>`).join("");
     if (window.lucide) window.lucide.createIcons();
     observeReveals();
   }
@@ -497,7 +587,7 @@
       element.dataset.customElement = item.id;
       element.dataset.elementKey = `custom:${item.id}`;
       element.className = `custom-element custom-element-${item.type}`;
-      if (item.type === "image") { element.src = item.src || seedImages[0]; element.alt = item.text || "自定义图片"; }
+      if (item.type === "image") { element.src = item.src || seedImages[0]; element.alt = item.text || "自定义图片"; element.loading = "lazy"; element.decoding = "async"; }
       else { element.textContent = item.text || (item.type === "button" ? "新按钮" : item.type === "heading" ? "新标题" : "新文本"); if (item.type === "button") { element.href = item.href || "#"; element.className += " inline-cta"; } }
       layer.append(element);
     });
@@ -667,7 +757,7 @@
     $("[data-news-current]").textContent = String(index + 1).padStart(2, "0");
   }
 
-  function render({ sync = true } = {}) {
+  function render({ sync = true, animate = true } = {}) {
     clearHomePageLinks();
     $$('[data-bind]').forEach((element) => setText(element, state[element.dataset.bind]));
     $$('[data-color-text]').forEach((element) => paintWords(element, state[element.dataset.colorText]));
@@ -691,7 +781,7 @@
     $(".site-header").classList.toggle("uses-dark-scroll-header", state.headerLightOnScroll === false);
     $(".editor").style.opacity = Math.max(.35, Math.min(1, Number(state.editorOpacity ?? 96) / 100));
     document.title = `${state.brand} — Minecraft Mod`;
-    renderPageNavigation(); renderSubpage(); renderNews(); renderExpertise(); renderCustomElements(); syncElementScopes();
+    renderPageNavigation(); renderSubpage({ animate }); renderNews(); renderExpertise(); renderCustomElements(); syncElementScopes();
     refreshElementRegistry();
     applyHomePageLinks();
     if (sync) syncControls();
@@ -710,32 +800,15 @@
   }
 
   function pageTreeRows() {
-    const children = new Map();
-    state.pages.forEach((page) => {
-      const parentId = page.parentId || null;
-      if (!children.has(parentId)) children.set(parentId, []);
-      children.get(parentId).push(page);
-    });
-    const rows = [];
-    const visit = (parentId, depth) => {
-      (children.get(parentId) || []).forEach((page) => {
-        const pageChildren = children.get(page.id) || [];
-        rows.push({ page, depth, hasChildren: pageChildren.length > 0 });
-        if (pageChildren.length && !collapsedPageIds.has(page.id)) visit(page.id, depth + 1);
-      });
-    };
-    visit(null, 0);
-    return rows;
+    return state.pages.map((page) => ({ page, depth: 0, hasChildren: false }));
   }
 
   function renderPageList() {
     const list = $("[data-page-list]"); if (!list) return;
-    list.innerHTML = pageTreeRows().map(({ page, depth, hasChildren }) => {
+    list.innerHTML = pageTreeRows().map(({ page }) => {
       const index = state.pages.indexOf(page);
-      const collapsed = collapsedPageIds.has(page.id);
-      return `<div class="page-tree-node" style="--page-depth:${depth}" role="treeitem" aria-level="${depth + 1}"${hasChildren ? ` aria-expanded="${!collapsed}"` : ""}><button type="button" class="page-tree-toggle" data-page-toggle="${escapeHTML(page.id)}" aria-label="${collapsed ? "展开" : "折叠"} ${escapeHTML(page.navLabel || page.title)}"${hasChildren ? "" : " disabled"}>${hasChildren ? `<i data-lucide="${collapsed ? "chevron-right" : "chevron-down"}"></i>` : ""}</button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}</small></span></button></div>`;
+      return `<div class="page-tree-node" role="treeitem" aria-level="1"><button type="button" class="page-tree-toggle" aria-hidden="true" tabindex="-1"></button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}${(page.tags || []).length ? ` · ${(page.tags || []).map(escapeHTML).join(" · ")}` : ""}</small></span></button></div>`;
     }).join("");
-    if (window.lucide) window.lucide.createIcons();
   }
 
   function renderHomeLinkControls(page) {
@@ -811,8 +884,8 @@
     const inspector = $("[data-page-inspector]"); if (!inspector) return;
     inspector.hidden = !page;
     if (!page) { renderHomeLinkControls(null); return; }
-    syncPageParentOptions(page);
     $$('[data-page-field]', inspector).forEach((input) => { if (document.activeElement === input) return; if (input.type === "checkbox") input.checked = Boolean(page[input.dataset.pageField]); else input.value = page[input.dataset.pageField] ?? ""; });
+    $$('[data-page-tag]', inspector).forEach((input) => { if (document.activeElement !== input) input.value = page.tags?.[Number(input.dataset.pageTag)] || ""; });
     const open = $(".page-open"); if (open) open.href = pageUrl(page.slug);
     renderHomeLinkControls(page);
   }
@@ -841,9 +914,21 @@
   $$('[data-collection]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => { state[input.dataset.collection][activeCollection[input.dataset.collection]][input.dataset.field] = input.value; render({ sync: false }); saveState(); }); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
 
   $("[data-page-list]")?.addEventListener("click", (event) => { const toggle = event.target.closest("[data-page-toggle]"); if (toggle) { const pageId = toggle.dataset.pageToggle; if (collapsedPageIds.has(pageId)) collapsedPageIds.delete(pageId); else collapsedPageIds.add(pageId); renderPageList(); return; } const button = event.target.closest("[data-page-select]"); if (!button) return; previewPage(button.dataset.pageSelect); });
-  $$('[data-page-field]').forEach((input) => {
+  $$('[data-page-field], [data-page-tag]').forEach((input) => {
     input.addEventListener("focus", () => { interactionStart = clone(state); });
-    input.addEventListener("input", () => { const page = selectedPage(); if (!page) return; const field = input.dataset.pageField; const value = input.type === "checkbox" ? input.checked : input.value; if (field === "parentId" && value && (value === page.id || isPageDescendant(value, page.id))) { input.value = page.parentId || ""; showToast("不能将页面设置为自身或自己的子页"); return; } page[field] = value || (field === "parentId" ? null : value); render({ sync: false }); renderPageList(); saveState(); });
+    input.addEventListener("input", () => {
+      const page = selectedPage();
+      if (!page) return;
+      if (input.dataset.pageTag != null) {
+        const tags = [...(page.tags || [])];
+        tags[Number(input.dataset.pageTag)] = input.value.trim();
+        page.tags = normalizePageTags(tags);
+      } else {
+        const field = input.dataset.pageField;
+        page[field] = input.type === "checkbox" ? input.checked : input.value;
+      }
+      render({ sync: false }); renderPageList(); saveState();
+    });
     input.addEventListener("change", () => { const page = selectedPage(); if (page && input.dataset.pageField === "slug") { page.slug = uniqueSlug(input.value, page.id); input.value = page.slug; if (viewPageId === page.id) history.replaceState(null, "", pageUrl(page.slug)); render({ sync: false }); renderPageList(); saveState(); } remember(interactionStart); interactionStart = null; });
   });
   function markdownFileName(page) { const base = String(page.slug || page.title || "page").replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "page"; return `${base}.md`; }
@@ -867,9 +952,9 @@
     } catch { showToast("Markdown 文件读取失败"); }
     input.value = "";
   });
-  $(".page-add")?.addEventListener("click", () => { const previous = clone(state); const id = `page-${Date.now().toString(36)}`; const parentId = selectedPage()?.id || null; const page = { ...clone(defaults.pages[0]), id, parentId, slug: uniqueSlug("new-page"), navLabel: "新页面", eyebrow: "NEW PAGE", title: "新的故事页面", summary: "在这里填写页面摘要。", contentTitle: "正文标题", body: "在这里填写完整正文。", published: true }; state.pages.push(page); remember(previous); previewPage(id); saveState(); showToast(parentId ? "已新增子页面" : "已新增根页面"); });
-  $(".page-duplicate")?.addEventListener("click", () => { const source = selectedPage(); if (!source) return; const previous = clone(state); const copy = { ...clone(source), id: `page-${Date.now().toString(36)}`, parentId: source.parentId || null, slug: uniqueSlug(`${source.slug}-copy`), navLabel: `${source.navLabel}副本`, published: false }; state.pages.push(copy); remember(previous); previewPage(copy.id); saveState(); showToast("已复制为草稿"); });
-  $(".page-delete")?.addEventListener("click", () => { const page = selectedPage(); if (!page) return; const previous = clone(state); const parentId = page.parentId || null; const customIds = state.customElements.filter((item) => item.pageId === page.id).map((item) => item.id); state.pages.forEach((item) => { if (item.parentId === page.id) item.parentId = parentId; }); state.pages = state.pages.filter((item) => item.id !== page.id); collapsedPageIds.delete(page.id); state.customElements = state.customElements.filter((item) => item.pageId !== page.id); state.homeLinks = Object.fromEntries(Object.entries(state.homeLinks).filter(([, pageId]) => pageId !== page.id)); Object.keys(state.elementStyles).filter((key) => key.startsWith(`page:${page.id}:`) || customIds.some((id) => key === `custom:${id}`)).forEach((key) => delete state.elementStyles[key]); if (viewPageId === page.id) { viewPageId = null; history.replaceState(null, "", location.pathname); } activePageId = state.pages[0]?.id || null; remember(previous); render(); saveState(); showToast("页面已删除，子页面已提升，可撤销"); });
+  $(".page-add")?.addEventListener("click", () => { const previous = clone(state); const id = `page-${Date.now().toString(36)}`; const page = { ...clone(defaults.pages[0]), id, parentId: null, tags: ["未分类"], slug: uniqueSlug("new-page"), navLabel: "新文章", eyebrow: "", title: "新的文章", summary: "在这里填写文章摘要。", contentTitle: "正文标题", body: "在这里填写完整正文。", published: true }; state.pages.push(page); remember(previous); previewPage(id); saveState(); showToast("已新增文章"); });
+  $(".page-duplicate")?.addEventListener("click", () => { const source = selectedPage(); if (!source) return; const previous = clone(state); const copy = { ...clone(source), id: `page-${Date.now().toString(36)}`, parentId: null, tags: [...(source.tags || [])], slug: uniqueSlug(`${source.slug}-copy`), navLabel: `${source.navLabel}副本`, published: false }; state.pages.push(copy); remember(previous); previewPage(copy.id); saveState(); showToast("已复制为草稿"); });
+  $(".page-delete")?.addEventListener("click", () => { const page = selectedPage(); if (!page) return; const previous = clone(state); const customIds = state.customElements.filter((item) => item.pageId === page.id).map((item) => item.id); collapsedPageIds.delete(page.id); state.customElements = state.customElements.filter((item) => item.pageId !== page.id); state.homeLinks = Object.fromEntries(Object.entries(state.homeLinks).filter(([, pageId]) => pageId !== page.id)); Object.keys(state.elementStyles).filter((key) => key.startsWith(`page:${page.id}:`) || customIds.some((id) => key === `custom:${id}`)).forEach((key) => delete state.elementStyles[key]); if (viewPageId === page.id) { viewPageId = null; history.replaceState(null, "", location.pathname); } activePageId = state.pages[0]?.id || null; remember(previous); render(); saveState(); showToast("页面已删除，子页面已提升，可撤销"); });
   $(".page-copy-link")?.addEventListener("click", async () => { const page = selectedPage(); if (!page) return; const url = new URL(pageUrl(page.slug), location.href).href; try { await navigator.clipboard.writeText(url); showToast("页面链接已复制"); } catch { showToast(url); } });
   $(".page-home-connect")?.addEventListener("click", () => {
     const page = selectedPage();
@@ -995,6 +1080,7 @@
     location.href = pageUrl(page.slug);
   });
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { closeFilterMenu(); return; }
     const target = event.target.closest('img[data-home-page-link], .item-arrow[data-home-page-link]');
     if (!target || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
@@ -1006,9 +1092,56 @@
     history.replaceState(null, "", `${location.pathname}${location.search}`);
   });
   document.addEventListener("click", (event) => {
+    if (!event.target.closest("[data-directory-category-trigger], [data-directory-category-menu]")) closeFilterMenu();
+    const filterTrigger = event.target.closest("[data-directory-category-trigger]");
+    if (filterTrigger) {
+      event.preventDefault();
+      const menu = filterTrigger.parentElement.querySelector("[data-directory-category-menu]");
+      if (menu && menu.classList.contains("is-open")) {
+        closeFilterMenu();
+      } else if (menu) {
+        menu.removeAttribute("hidden");
+        requestAnimationFrame(() => menu.classList.add("is-open"));
+        filterTrigger.setAttribute("aria-expanded", "true");
+      }
+      return;
+    }
+    const filterOption = event.target.closest("[data-directory-category-menu] [data-category-value]");
+    if (filterOption) {
+      event.preventDefault();
+      const value = filterOption.dataset.categoryValue || "";
+      const currentParams = new URLSearchParams(location.search);
+      if (value !== (currentParams.get("tag") || "")) {
+        const url = new URL(pageDirectoryUrl(1, value, currentParams.get("q") || ""), location.href);
+        history.pushState(null, "", `${url.pathname}${url.search}`);
+        render({ animate: false });
+      } else {
+        closeFilterMenu();
+      }
+      return;
+    }
+    const filterClose = event.target.closest("[data-directory-category-close]");
+    if (filterClose) { event.preventDefault(); closeFilterMenu(); return; }
     if (event.target.closest("[data-page-outline-toggle]")) { togglePageOutline(); return; }
     if (event.target.closest("[data-page-outline-close]")) { closePageOutline(); return; }
     if (event.target.closest("[data-page-outline] a")) { closePageOutline(); return; }
+    const directoryLink = event.target.closest('a[href*="view=pages"]');
+    if (directoryLink) {
+      const url = new URL(directoryLink.href, location.href);
+      if (url.origin === location.origin && url.pathname === location.pathname && url.searchParams.get("view") === "pages") {
+        const isSubpageBack = !!event.target.closest(".subpage-back");
+        const inDirectory = !!event.target.closest("[data-page-directory]");
+        event.preventDefault();
+        history.pushState(null, "", `${url.pathname}${url.search}`);
+        render({ animate: false });
+        if (isSubpageBack || inDirectory) {
+          scrollDirectoryToHeroBottom();
+        } else {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }
+        return;
+      }
+    }
     const link = event.target.closest('a[href*="?page="]');
     if (!link || link.target === "_blank") return;
     const url = new URL(link.href, location.href);
@@ -1020,7 +1153,14 @@
     history.pushState(null, "", `${url.pathname}${url.search}`);
     previewPageFromUrl(url);
   });
-  window.addEventListener("popstate", () => { previewPageFromUrl(new URL(location.href)); });
+  window.addEventListener("popstate", () => {
+    const url = new URL(location.href);
+    if (url.searchParams.get("view") === "pages") {
+      render({ animate: false });
+    } else {
+      previewPageFromUrl(url);
+    }
+  });
   function trailerEmbedUrl(value) {
     const source = String(value || "").trim();
     const iframeMatch = source.match(/<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/i);
@@ -1063,7 +1203,7 @@
   function searchExcerpt(sourceValue, query) { const source = String(sourceValue || "").normalize("NFKC").replace(/[#>*_`~\[\]()!-]/g, " ").replace(/\s+/g, " ").trim(); const normalizedQuery = normalizeSearchText(query); const index = source.toLocaleLowerCase().indexOf(normalizedQuery); if (index < 0) return source.slice(0, 120); return `${index > 36 ? "..." : ""}${source.slice(Math.max(0, index - 36), index + 96)}${source.length > index + 96 ? "..." : ""}`; }
   function searchMarkdownExcerpt(page, query) { return searchExcerpt(page.body || page.summary, query); }
   function renderSearchResults(query) { const status = $(".search-result"); const results = $(".search-results"); if (!status || !results) return; if (!query) { status.textContent = "请输入关键词"; results.innerHTML = ""; return; } const normalizedQuery = normalizeSearchText(query).trim(); const hits = state.pages.filter((page) => normalizeSearchText(searchPageText(page)).includes(normalizedQuery)); status.textContent = hits.length ? `找到 ${hits.length} 个子页` : "没有找到相关子页"; results.innerHTML = hits.map((page) => `<article class="search-result-item" role="listitem"><p class="search-result-eyebrow">子页 · ${escapeHTML(page.eyebrow || page.navLabel || "Markdown")}</p><h2>${escapeHTML(String(page.title || "未命名页面").replace(/\n/g, " "))}</h2><p class="search-result-summary">${escapeHTML(page.summary || "暂无简述")}</p><p class="search-result-markdown"><span>Markdown</span> ${escapeHTML(searchMarkdownExcerpt(page, query))}</p><a href="${pageUrl(page.slug)}" class="search-result-link">进入子页 <i data-lucide="arrow-up-right"></i></a></article>`).join(""); if (window.lucide) window.lucide.createIcons(); }
-  $(".search-button")?.addEventListener("click", () => { $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); renderSearchResults($("#site-search").value.trim().toLowerCase()); }); $("#site-search")?.addEventListener("input", (event) => renderSearchResults(event.target.value.trim().toLowerCase()));
+  $(".search-button")?.addEventListener("click", () => { if (new URLSearchParams(location.search).get("view") === "pages" && document.body.classList.contains("is-directory")) { scrollDirectoryToHeroBottom(); $("[data-directory-search]")?.focus(); return; } $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); renderSearchResults($("#site-search").value.trim().toLowerCase()); }); $("#site-search")?.addEventListener("input", (event) => renderSearchResults(event.target.value.trim().toLowerCase()));
   $(".menu-button")?.addEventListener("click", () => { $(".menu-layer").classList.add("is-open"); $(".menu-layer").setAttribute("aria-hidden", "false"); }); $(".menu-close")?.addEventListener("click", () => { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); }); $(".menu-layer")?.addEventListener("click", (event) => { if (event.target.closest("a")) { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); } });
   $(".download-button")?.addEventListener("click", (event) => { if (!state.downloadUrl || state.downloadUrl === "#") { event.preventDefault(); showToast("请在编辑器中填写下载链接"); } });
 
@@ -1077,8 +1217,10 @@
   function observeReveals() { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), { threshold: .08 }); $$(".reveal, .reveal-card, .media-reveal").forEach((element) => observer.observe(element)); }
   async function bootstrap() {
     if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, theme: "base", securityLevel: "strict", themeVariables: { primaryColor: "#eef0e8", primaryTextColor: "#30332e", primaryBorderColor: "#62665f", lineColor: "#62665f", tertiaryColor: "#f5f4ed" } });
-    const loadedBundledConfig = await loadBundledConfig();
     syncViewedPageFromLocation();
+    render();
+    const loadedBundledConfig = await loadBundledConfig();
+    if (loadedBundledConfig) render();
     revealHeroMedia($(".hero-media"));
     if (window.lucide) window.lucide.createIcons();
     syncElementScopes();
@@ -1086,7 +1228,9 @@
     migrateEmbeddedImages();
     syncConfigMetaDisplay();
     if (isLocalDev) document.body.classList.add("is-dev");
+    if (isLocalDev) { const editButton = $( ".edit-button" ); if (editButton) editButton.style.display = "inline-flex"; }
     document.body.classList.add("page-ready");
+    try { sessionStorage.setItem("ashfall-loader-seen", "1"); } catch {}
     const params = new URLSearchParams(location.search); if (params.get("edit") === "1") { $(".edit-button").style.display = ""; toggleEditor(true); } if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
   }
   bootstrap();
