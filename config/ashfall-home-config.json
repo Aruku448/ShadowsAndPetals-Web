@@ -43,7 +43,6 @@
       "positionMode": "flow",
       "x": "69",
       "width": "76",
-      "height": "1600",
       "align": "stretch"
     },
     "manifesto:p:0": {
@@ -54,17 +53,15 @@
     "manifesto:h2:0": {
       "width": "149",
       "y": "85",
-      "fontSize": "55",
+      "fontSize": "37",
       "positionMode": "flow",
       "borderRadius": "0",
       "opacity": "100",
       "align": "stretch",
       "translateY": "-45",
-      "x": "26",
-      "height": "862"
+      "x": "26"
     },
     "manifesto:p:1": {
-      "height": "201",
       "width": "104",
       "translateY": "-34",
       "positionMode": "flow",
@@ -132,8 +129,7 @@
       "positionMode": "flow"
     },
     "manifesto:div:1": {
-      "align": "stretch",
-      "width": "45"
+      "align": "stretch"
     },
     "expertise:0:title": {
       "text": "织影落花 Mod 内容"
@@ -790,7 +786,7 @@
     }
   ],
   "configMeta": {
-    "revision": 21,
-    "updatedAt": "2026-09-06 09:29"
+    "revision": 25,
+    "updatedAt": "2026-09-06 08:05"
   }
 }
