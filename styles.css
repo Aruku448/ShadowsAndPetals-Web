@@ -443,6 +443,7 @@ body.page-ready .page-loader { opacity: 0; visibility: hidden; pointer-events: n
   .directory-hero:not(.directory-hero-cover) { grid-template-columns: 1fr; min-height: 430px; padding: 125px 5.3vw 65px; }
 
   .directory-hero-cover h1 { font-size: clamp(48px, 13vw, 82px); }
+  .directory-hero-wall { inset: calc(-160% + 60px) -200% calc(-140% - 40px) -200%; transform: rotate(-30deg) scale(0.42); }
   .directory-hero-cover > div:last-of-type p { margin-top: 26px; font-size: 15px; }
   .directory-back { top: 94px; }
   .directory-hero-cover + .directory-toolbar { padding-top: 45px; }

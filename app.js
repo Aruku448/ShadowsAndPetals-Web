@@ -333,7 +333,7 @@
       wall.innerHTML = Array.from({ length: wallRows }, (_, row) => {
         const rowImages = [...wallImages.slice(row % wallImages.length), ...wallImages.slice(0, row % wallImages.length)];
         const sources = [...rowImages, ...rowImages, ...rowImages];
-        return `<div class="directory-hero-wall-track" style="--wall-row:${row}">${sources.map((source) => `<img class="directory-hero-wall-tile" src="${escapeHTML(source)}" alt="" loading="lazy" decoding="async" />`).join("")}</div>`;
+        return `<div class="directory-hero-wall-track" style="--wall-row:${row}">${sources.map((source) => `<img class="directory-hero-wall-tile" src="${escapeHTML(source)}" alt="" loading="eager" decoding="async" />`).join("")}</div>`;
       }).join("");
       hero.prepend(wall);
       const overlay = document.createElement("div"); overlay.className = "directory-hero-overlay"; overlay.setAttribute("aria-hidden", "true"); hero.prepend(overlay);
