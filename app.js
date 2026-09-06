@@ -549,7 +549,7 @@
 
   function renderExpertise() {
     const list = $(".expertise-list");
-    list.innerHTML = state.expertise.map((item, index) => `<article class="expertise-item reveal-card" data-expertise-index="${index}"><div class="expertise-number">${String(index + 1).padStart(2, "0")}</div><div><h3>${item.title}</h3><p>${item.caption}</p></div><div class="expertise-thumb"><img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async" /></div><span class="item-arrow"><i data-lucide="arrow-up-right"></i></span></article>`).join("");
+    list.innerHTML = state.expertise.map((item, index) => { const targetPage = state.pages.find((page) => page.id === state.homeLinks[`expertise:${index}:arrow`]); const targetHref = targetPage ? pageUrl(targetPage.slug) : "#"; return `<article class="expertise-item reveal-card" data-expertise-index="${index}"><div class="expertise-number">${String(index + 1).padStart(2, "0")}</div><div><h3>${item.title}</h3><p>${item.caption}</p></div><div class="expertise-thumb"><img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async" /></div><a class="item-arrow" href="${escapeHTML(targetHref)}" aria-label="打开 ${escapeHTML(item.title)}"><i data-lucide="arrow-up-right"></i></a></article>`; }).join("");
     if (window.lucide) window.lucide.createIcons();
     observeReveals();
   }
@@ -1073,11 +1073,11 @@
   }, true);
   document.addEventListener("click", (event) => {
     const target = event.target.closest("[data-home-page-link]");
-    if (!target || target.matches("a")) return;
+    if (!target) return;
     const page = state.pages.find((item) => item.id === target.dataset.homePageLink);
     if (!page) return;
     event.preventDefault();
-    location.href = pageUrl(page.slug);
+    previewPage(page.id);
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") { closeFilterMenu(); return; }
