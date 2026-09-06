@@ -566,6 +566,18 @@ body.is-subpage .site-footer { border-radius: 0; }
 .markdown-body .footnotes ol { margin-bottom: 0; }
 .markdown-body .katex-display { overflow-x: auto; overflow-y: hidden; padding-block: .35em; }
 .markdown-mermaid { display: grid; place-items: center; max-width: 100%; margin: 1.8em 0; padding: 20px; overflow-x: auto; border: 1px solid rgba(91, 96, 87, .16); border-radius: 10px; background: #fff; }
+.markdown-midi { margin: 2em 0 3em; padding: 18px 20px 14px; overflow-x: auto; border: 1px solid rgba(91, 96, 87, .18); background: #fff; }
+.markdown-midi figcaption { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #596057; font-size: 12px; font-weight: 800; }
+.markdown-midi figcaption svg { width: 16px; height: 16px; color: #2878c8; }
+.markdown-midi .midi-score-list { display: grid; gap: 28px; }
+.markdown-midi .midi-staff { margin: 0; padding-top: 12px; border-top: 1px solid rgba(91, 96, 87, .16); }
+.markdown-midi .midi-staff:first-child { border-top: 0; padding-top: 0; }
+.markdown-midi .midi-staff h3 { margin: 0 0 8px; color: #596057; font-size: 12px; font-weight: 800; }
+.markdown-midi .midi-track-group + .midi-track-group { margin-top: 26px; }
+.markdown-midi .midi-piano-group { display: grid; gap: 0; padding: 12px 0; border-block: 1px solid rgba(91, 96, 87, .16); }
+.markdown-midi .midi-piano-group .midi-staff { border-top: 0; padding-top: 0; }
+.markdown-midi .midi-score svg { display: block; max-width: none; height: auto; }
+.markdown-midi.is-error { color: #a22d1d; }
 .markdown-mermaid .node rect { rx: 10px; ry: 10px; }
 .markdown-mermaid .cluster rect { rx: 10px; ry: 10px; }
 .markdown-body a { overflow-wrap: anywhere; }
@@ -644,7 +656,9 @@ body.is-subpage .site-footer { border-radius: 0; }
 .toggle-row span small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; font-weight: 600; line-height: 1.35; }
 .home-page-link-target { cursor: pointer; }
 .home-page-link-target:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
-.page-inspector textarea[data-page-field="body"] { min-height: 280px; }
+.midi-file-status { margin: -5px 0 12px; color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.midi-track-control select { width: 100%; min-height: 38px; border: 1px solid rgba(18,19,18,.22); border-radius: 0; padding: 7px 9px; color: var(--ink); background: #fff; font-size: 12px; font-weight: 600; }
+.midi-track-control select:disabled, .midi-remove-button:disabled { opacity: .45; cursor: not-allowed; }
 
 @media (max-width: 986px) {
   .subpage-view > section { min-height: 0; }
@@ -863,7 +877,8 @@ html:not(.js-enabled) .page-loader { display: none; }
 }
 
 
-/* 开发环境（localhost）默认显示编辑按钮，可直接点击“自定义”进入编辑器 */
+/* 开发环境（localhost）始终显示编辑按钮，编辑器仍由按钮手动展开。 */
+.is-dev .edit-button { display: inline-flex !important; }
 /* Keep the article hero as a full-screen subpage instance after transitions. */
 @media (min-width: 987px) {
   .subpage-hero { width: 100%; height: max(100dvh, 56.25vw); min-height: max(100dvh, 56.25vw); }

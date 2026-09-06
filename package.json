@@ -8,6 +8,8 @@
     "check": "node --check app.js"
   },
   "dependencies": {
+    "@tonejs/midi": "^2.0.28",
+    "abcjs": "^6.7.0",
     "dompurify": "^3.4.14",
     "katex": "^0.18.5",
     "lucide": "^0.544.0",

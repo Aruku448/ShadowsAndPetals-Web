@@ -10,7 +10,9 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const seedImages = ["assets/feature-ecology.png", "assets/feature-machinery.png", "assets/feature-weather.png", "assets/news-cavern.png", "assets/about-team.png", "assets/research-lab.png", "assets/sustainability-world.png"];
+  const EDITOR_SESSION_KEY = "ashfall-editor-open";
+  let editorKeepOpen = false;
+  try { editorKeepOpen = sessionStorage.getItem(EDITOR_SESSION_KEY) === "1"; } catch {}
 
   const defaults = {
     configVersion: 6,
@@ -71,6 +73,9 @@
         ctaLabel: "对我们Mod感兴趣吗？点击这里下载",
         ctaUrl: "./index.html#download",
         published: false,
+        midiData: "",
+        midiName: "",
+        midiTrack: null,
       },
     ],
     heroImage: "assets/hero-ashfall.png",
@@ -216,7 +221,7 @@
   }
 
   function homeUrl(hash = "") { return `./index.html${String(hash || "").startsWith("#") ? hash : ""}`; }
-  function pageUrl(slug, returnUrl = "") { const params = new URLSearchParams({ page: slug }); if (returnUrl) params.set("from", returnUrl); return `./index.html?${params}`; }
+  function pageUrl(slug, returnUrl = "") { const params = new URLSearchParams({ page: slug }); if (returnUrl) params.set("from", returnUrl); if (new URLSearchParams(location.search).get("edit") === "1" || document.body.classList.contains("editor-open")) params.set("edit", "1"); return `./index.html?${params}`; }
   function selectedPage() { return state.pages.find((page) => page.id === activePageId) || null; }
   function viewedPage() { return state.pages.find((page) => page.id === viewPageId) || null; }
   function cleanSlug(value) { return String(value || "page").trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff-]+/g, "-").replace(/^-+|-+$/g, "") || "page"; }
@@ -289,7 +294,7 @@
 
   function renderPageNavigation() {}
 
-  function pageDirectoryUrl(page = 1, category = "", query = "") { const params = new URLSearchParams({ view: "pages", page: String(page) }); if (category) params.set("tag", category); if (query) params.set("q", query); return `./index.html?${params}`; }
+  function pageDirectoryUrl(page = 1, category = "", query = "") { const params = new URLSearchParams({ view: "pages", page: String(page) }); if (category) params.set("tag", category); if (query) params.set("q", query); if (new URLSearchParams(location.search).get("edit") === "1" || document.body.classList.contains("editor-open")) params.set("edit", "1"); return `./index.html?${params}`; }
   function applyDirectoryImageRatio(image) {
     if (!image?.naturalWidth || !image.naturalHeight) return;
     const ratio = Math.min(1.55, Math.max(.82, image.naturalWidth / image.naturalHeight));
@@ -364,6 +369,116 @@
     const reveal = () => requestAnimationFrame(() => { if (image.isConnected) image.classList.add("is-loaded"); });
     image.addEventListener("load", reveal);
     if (image.complete && image.naturalWidth) reveal();
+  }
+
+  function midiNoteToAbc(midi) {
+    const names = ["C", "^C", "D", "^D", "E", "F", "^F", "G", "^G", "A", "^A", "B"];
+    const octave = Math.floor(midi / 12) - 1;
+    let note = names[midi % 12];
+    if (octave >= 5) note = note.toLowerCase() + "'".repeat(Math.max(0, octave - 5));
+    else if (octave < 4) note += ",".repeat(Math.max(0, 4 - octave));
+    return note;
+  }
+
+  function dataUrlToMidiBytes(value) {
+    const encoded = String(value).split(",")[1];
+    if (!encoded) throw new Error("invalid-midi-data");
+    const binary = atob(encoded);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return bytes;
+  }
+
+  function parseMidi(data) {
+    const MidiParser = window.Midi?.Midi || window.Midi;
+    if (typeof MidiParser !== "function") throw new Error("midi-parser-unavailable");
+    return new MidiParser(data);
+  }
+
+  function midiTrackEntries(data) {
+    const midi = parseMidi(data);
+    return midi.tracks.map((track, index) => ({ index, track })).filter(({ track }) => track.notes.length);
+  }
+
+  function midiTrackLabel(entry) {
+    const { index, track } = entry;
+    const name = String(track.name || track.instrument?.name || "未命名声部").replace(/[^\x20-\x7e\u4e00-\u9fff]/g, "").trim() || "未命名声部";
+    return `${String(index + 1).padStart(2, "0")} · ${name} · ${track.notes.length} 音符`;
+  }
+
+  function midiToAbc(data, name = "MIDI", selectedTrack = null, noteRange = null, clef = "treble") {
+    const midi = parseMidi(data);
+    const entries = midi.tracks.map((track, index) => ({ index, track })).filter(({ track }) => track.notes.length);
+    const selected = entries.find(({ index }) => index === Number(selectedTrack)) || entries[0];
+    if (!selected) throw new Error("midi-empty");
+    const notes = [...selected.track.notes].filter((note) => !noteRange || noteRange(note.midi)).sort((a, b) => a.ticks - b.ticks || b.midi - a.midi).slice(0, 4000);
+    const unit = Math.max(1, midi.header.ppq / 4);
+    const grouped = new Map();
+    notes.forEach((note) => { const start = Math.max(0, Math.round(note.ticks / unit)); const duration = Math.max(1, Math.round(note.durationTicks / unit)); if (!grouped.has(start)) grouped.set(start, []); grouped.get(start).push({ midi: note.midi, duration }); });
+    const events = [...grouped.entries()].map(([start, values], index, all) => ({ start: Number(start), midi: Math.max(...values.map((value) => value.midi)), duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (all[index + 1] ? Number(all[index + 1][0]) : Infinity) - Number(start))) }));
+    const tokens = []; let cursor = 0; let barUnits = 0;
+    const readableDurations = [16, 12, 8, 6, 4, 3, 2, 1];
+    const append = (note, length) => {
+      let remaining = length;
+      while (remaining > 0) {
+        const room = 16 - barUnits;
+        const amount = readableDurations.find((duration) => duration <= Math.min(remaining, room)) || 1;
+        remaining -= amount;
+        tokens.push(`${note}${amount > 1 ? amount : ""}${note !== "z" && remaining > 0 ? "-" : ""}`);
+        barUnits += amount;
+        if (barUnits === 16) { tokens.push("|"); barUnits = 0; }
+      }
+    };
+    events.forEach((event) => { if (event.start > cursor) append("z", event.start - cursor); append(midiNoteToAbc(event.midi), event.duration); cursor = Math.max(cursor, event.start + event.duration); });
+    const trackName = String(selected.track.name || selected.track.instrument?.name || `声部 ${selected.index + 1}`).replace(/[\r\n]/g, " ");
+    return `X:1\nT:${String(name).replace(/[\r\n]/g, " ").slice(0, 56)} - ${trackName.slice(0, 24)}\nM:4/4\nL:1/16\nK:C clef=${clef}\n${tokens.join(" ")}`;
+  }
+
+  function midiFigure(page) {
+    if (!page.midiData || !window.ABCJS) return null;
+    const figure = document.createElement("figure");
+    figure.className = "markdown-embed-tool markdown-midi";
+    figure.innerHTML = `<figcaption><i data-lucide="music-2"></i>${escapeHTML(page.midiName || "MIDI 总谱")}</figcaption><div class="midi-score-list"></div>`;
+    try {
+      const data = dataUrlToMidiBytes(page.midiData);
+      const tracks = midiTrackEntries(data);
+      const list = figure.querySelector(".midi-score-list");
+      if (!tracks.length) throw new Error("midi-empty");
+      tracks.forEach((entry) => {
+        const trackLabel = midiTrackLabel(entry);
+        const isPiano = /piano|键盘|钢琴/i.test(String(entry.track.name || ""));
+        const staffEntries = isPiano ? [{ label: `${trackLabel} · 右手`, clef: "treble", range: (midi) => midi >= 60 }, { label: `${trackLabel} · 左手`, clef: "bass", range: (midi) => midi < 60 }] : [{ label: trackLabel, clef: "treble", range: null }];
+        const group = document.createElement("section");
+        group.className = `midi-track-group${isPiano ? " midi-piano-group" : ""}`;
+        list.append(group);
+        staffEntries.forEach((staffEntry) => {
+          const staff = document.createElement("section");
+          staff.className = "midi-staff";
+          staff.innerHTML = `<h3>${escapeHTML(staffEntry.label)}</h3><div class="midi-score"></div>`;
+          group.append(staff);
+          const availableWidth = document.querySelector("[data-page-markdown]")?.clientWidth || 1140;
+          const staffwidth = Math.max(520, Math.min(1100, availableWidth - 40));
+          window.ABCJS.renderAbc(staff.querySelector(".midi-score"), midiToAbc(data, page.midiName, entry.index, staffEntry.range, staffEntry.clef), { responsive: "resize", add_classes: true, staffwidth, wrap: { preferredMeasuresPerLine: 4, minSpacing: 1.5, minSpacingLimit: 1.1 } });
+        });
+      });
+    }
+    catch { figure.classList.add("is-error"); figure.querySelector(".midi-score").textContent = "MIDI 文件无法解析或没有音符。"; }
+    return figure;
+  }
+
+  const embeddedToolRenderers = {
+    midi: (page) => midiFigure(page),
+    mid: (page) => midiFigure(page),
+  };
+
+  function renderEmbeddedTools(body, page) {
+    body.querySelectorAll("pre > code[class*='language-']").forEach((code) => {
+      const toolName = [...code.classList].find((className) => className.startsWith("language-"))?.slice(9).toLowerCase();
+      const renderer = embeddedToolRenderers[toolName];
+      if (!renderer) return;
+      const tool = renderer(page);
+      if (tool) code.parentElement.replaceWith(tool);
+    });
   }
 
   function markdownSource(source) {
@@ -451,6 +566,8 @@
     buildPageOutline(body);
     updatePageOutlineActive();
     enhanceMarkdown(body);
+    renderEmbeddedTools(body, page);
+    if (window.lucide) window.lucide.createIcons();
   }
 
   function closePageOutline() { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-toggle]"); if (!panel || !toggle) return; if (panel.contains(document.activeElement)) toggle.focus(); const mobile = window.matchMedia("(max-width: 986px)").matches; panel.classList.remove("is-open"); panel.setAttribute("aria-hidden", String(mobile)); panel.inert = mobile; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-label", "打开文章大纲"); }
@@ -885,6 +1002,8 @@
     inspector.hidden = !page;
     if (!page) { renderHomeLinkControls(null); return; }
     $$('[data-page-field]', inspector).forEach((input) => { if (document.activeElement === input) return; if (input.type === "checkbox") input.checked = Boolean(page[input.dataset.pageField]); else input.value = page[input.dataset.pageField] ?? ""; });
+    const midiStatus = $(`[data-page-midi-status]`); if (midiStatus) midiStatus.textContent = page.midiName ? `当前文件：${page.midiName}` : "尚未上传 MIDI 文件";
+    const midiRemove = $(".midi-remove-button"); if (midiRemove) midiRemove.disabled = !page.midiData;
     $$('[data-page-tag]', inspector).forEach((input) => { if (document.activeElement !== input) input.value = page.tags?.[Number(input.dataset.pageTag)] || ""; });
     const open = $(".page-open"); if (open) open.href = pageUrl(page.slug);
     renderHomeLinkControls(page);
@@ -932,7 +1051,19 @@
     input.addEventListener("change", () => { const page = selectedPage(); if (page && input.dataset.pageField === "slug") { page.slug = uniqueSlug(input.value, page.id); input.value = page.slug; if (viewPageId === page.id) history.replaceState(null, "", pageUrl(page.slug)); render({ sync: false }); renderPageList(); saveState(); } remember(interactionStart); interactionStart = null; });
   });
   function markdownFileName(page) { const base = String(page.slug || page.title || "page").replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "page"; return `${base}.md`; }
-  $(".markdown-export-button")?.addEventListener("click", () => { const page = selectedPage(); if (!page) { showToast("先选择一个子页"); return; } const blob = new Blob([String(page.body || "")], { type: "text/markdown;charset=utf-8" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = markdownFileName(page); link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 0); showToast(`已导出 Markdown：${link.download}`); });
+  $(`[data-page-midi]`)?.addEventListener("change", async (event) => {
+    const input = event.target; const file = input.files?.[0]; const page = selectedPage();
+    if (!file || !page) return;
+    if (file.size > 2 * 1024 * 1024) { showToast("MIDI 文件不能超过 2 MB"); input.value = ""; return; }
+    try {
+      const previous = clone(state); const reader = new FileReader();
+      const data = await new Promise((resolve, reject) => { reader.onerror = reject; reader.onload = () => resolve(reader.result); reader.readAsDataURL(file); });
+      midiToAbc(dataUrlToMidiBytes(data), file.name);
+      page.midiData = data; page.midiName = file.name; remember(previous); render({ sync: false }); syncPageControls(); saveState(); showToast(`已加载五线谱：${file.name}`);
+    } catch { showToast("MIDI 文件读取或解析失败"); }
+    input.value = "";
+  });
+  $(".midi-remove-button")?.addEventListener("click", () => { const page = selectedPage(); if (!page?.midiData) return; const previous = clone(state); page.midiData = ""; page.midiName = ""; remember(previous); render({ sync: false }); syncPageControls(); saveState(); showToast("已移除 MIDI 五线谱"); });
   $("[data-page-markdown-import]")?.addEventListener("change", async (event) => {
     const input = event.target;
     const file = input.files?.[0];
@@ -1012,7 +1143,7 @@
   $("[data-element-bg]")?.addEventListener("input", (event) => updateElementStyle(selectedElementKey, "backgroundColor", event.target.value));
   $$('[data-element-style]').forEach((input) => input.addEventListener("input", () => updateElementStyle(selectedElementKey, input.dataset.elementStyle, input.type === "checkbox" ? input.checked : input.value)));
 
-  function toggleEditor(open) { document.body.classList.toggle("editor-open", open); if (!open) setPickerMode(false); $(".editor").setAttribute("aria-hidden", String(!open)); $(".edit-button").setAttribute("aria-expanded", String(open)); if (open) setTimeout(() => $(".editor-close").focus(), 280); else $(".edit-button").focus(); }
+  function toggleEditor(open) { document.body.classList.toggle("editor-open", open); try { sessionStorage.setItem(EDITOR_SESSION_KEY, open ? "1" : "0"); } catch {} const page = selectedPage(); const pageOpen = $(".page-open"); if (page && pageOpen) pageOpen.href = pageUrl(page.slug); if (!open) setPickerMode(false); $(".editor").setAttribute("aria-hidden", String(!open)); $(".edit-button").setAttribute("aria-expanded", String(open)); if (open) setTimeout(() => $(".editor-close").focus(), 280); else $(".edit-button").focus(); }
   $(".edit-button").addEventListener("click", () => toggleEditor(true)); $(".editor-close").addEventListener("click", () => toggleEditor(false)); $(".done-button").addEventListener("click", () => toggleEditor(false)); $(".editor-backdrop").addEventListener("click", () => toggleEditor(false));
   $$(".editor-tabs button").forEach((button) => button.addEventListener("click", () => { $$(".editor-tabs button").forEach((tab) => { const active = tab === button; tab.classList.toggle("is-active", active); tab.setAttribute("aria-selected", active); }); $$(".editor-panel").forEach((panel) => { panel.hidden = panel.dataset.panel !== button.dataset.tab; panel.classList.toggle("is-active", panel.dataset.panel === button.dataset.tab); }); }));
   $(".undo-button").addEventListener("click", () => { if (!past.length) return; future.push(clone(state)); state = past.pop(); render(); saveState(); }); $(".redo-button").addEventListener("click", () => { if (!future.length) return; past.push(clone(state)); state = future.pop(); render(); saveState(); });
@@ -1231,7 +1362,7 @@
     if (isLocalDev) { const editButton = $( ".edit-button" ); if (editButton) editButton.style.display = "inline-flex"; }
     document.body.classList.add("page-ready");
     try { sessionStorage.setItem("ashfall-loader-seen", "1"); } catch {}
-    const params = new URLSearchParams(location.search); if (params.get("edit") === "1") { $(".edit-button").style.display = ""; toggleEditor(true); } if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
+    const params = new URLSearchParams(location.search); if (params.get("edit") === "1" || editorKeepOpen) { $(".edit-button").style.display = ""; toggleEditor(true); } if (viewPageId && viewPageId !== "missing") $$(".editor-tabs button").find((button) => button.dataset.tab === "pages")?.click(); if (["manifesto", "news", "expertise", "about", "research", "sustainability", "download"].includes(params.get("view"))) setTimeout(() => { document.getElementById(params.get("view"))?.scrollIntoView(); revealInViewport(); }, 60);
   }
   bootstrap();
   window.openAshfallEditor = () => { $(".edit-button").style.display = ""; toggleEditor(true); };
