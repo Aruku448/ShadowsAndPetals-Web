@@ -120,6 +120,11 @@
   function mergeConfig(input = {}) {
     const merged = { ...clone(defaults), ...input };
     merged.elementStyles = { ...clone(defaults.elementStyles), ...(input.elementStyles || {}) };
+    const headerContactLink = merged.elementStyles["site-header:a:4"];
+    if (headerContactLink?.href === "./index.html#research" && headerContactLink?.text === "未来更新") {
+      headerContactLink.href = "./index.html#sustainability";
+      headerContactLink.text = "联系我们";
+    }
     merged.customElements = Array.isArray(input.customElements) ? input.customElements : [];
     merged.pages = Array.isArray(input.pages) ? input.pages.map((page, index) => ({ ...clone(defaults.pages[0]), ...page, id: page.id || `page-${index + 1}`, tags: normalizePageTags(page.tags ?? page.eyebrow) })) : clone(defaults.pages);
     // 文章管理不再使用父子关系；保留旧字段仅用于兼容已有配置，不参与展示或导航。
