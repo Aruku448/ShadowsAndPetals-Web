@@ -566,17 +566,25 @@ body.is-subpage .site-footer { border-radius: 0; }
 .markdown-body .footnotes ol { margin-bottom: 0; }
 .markdown-body .katex-display { overflow-x: auto; overflow-y: hidden; padding-block: .35em; }
 .markdown-mermaid { display: grid; place-items: center; max-width: 100%; margin: 1.8em 0; padding: 20px; overflow-x: auto; border: 1px solid rgba(91, 96, 87, .16); border-radius: 10px; background: #fff; }
-.markdown-midi { margin: 2em 0 3em; padding: 18px 20px 14px; overflow-x: auto; border: 1px solid rgba(91, 96, 87, .18); background: #fff; }
-.markdown-midi figcaption { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #596057; font-size: 12px; font-weight: 800; }
-.markdown-midi figcaption svg { width: 16px; height: 16px; color: #2878c8; }
-.markdown-midi .midi-score-list { display: grid; gap: 28px; }
-.markdown-midi .midi-staff { margin: 0; padding-top: 12px; border-top: 1px solid rgba(91, 96, 87, .16); }
+.markdown-midi { margin: 2em 0 3em; padding: 18px 20px 14px; overflow: hidden; border: 1px solid rgba(91, 96, 87, .18); border-radius: 16px; background: #fff; }
+.markdown-midi .midi-score-list { display: grid; gap: 28px; overflow-x: auto; padding-bottom: 2px; }
+.markdown-midi .midi-staff { margin: 0; padding: 14px 12px 10px; border-top: 1px solid rgba(91, 96, 87, .16); border-radius: 10px; transition: padding 260ms ease, background 260ms ease; }
+.markdown-midi .midi-staff .midi-score { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 420ms ease, opacity 220ms ease; }
+.markdown-midi .midi-staff.is-rendering .midi-score { max-height: 160px; opacity: .55; }
+.markdown-midi .midi-staff.is-expanded .midi-score { max-height: 12000px; opacity: 1; }
 .markdown-midi .midi-staff:first-child { border-top: 0; padding-top: 0; }
-.markdown-midi .midi-staff h3 { margin: 0 0 8px; color: #596057; font-size: 12px; font-weight: 800; }
+.markdown-midi .midi-staff h3 { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 12px; color: #20231f; font-family: Arial, "Helvetica Neue", "Noto Sans SC", "Microsoft YaHei", sans-serif; font-size: 26px; font-weight: 800; line-height: 1.2; }
+.markdown-midi .midi-staff-title { min-width: 0; overflow-wrap: anywhere; }
+.markdown-midi .midi-staff-trigger { flex: 0 0 auto; display: inline-flex; padding: 6px 12px; border: 0; border-radius: 999px; color: #171a16; background: #fff; font: inherit; font-size: 16px; font-weight: 800; text-align: left; cursor: pointer; transition: color 180ms ease, background 180ms ease, transform 180ms ease; }
+.markdown-midi .midi-staff-trigger:hover, .markdown-midi .midi-staff-trigger:focus-visible { color: var(--accent); background: #fff; outline: none; transform: translateY(-1px); }
+.markdown-midi .midi-staff.is-expanded .midi-staff-trigger, .markdown-midi .midi-staff.is-rendering .midi-staff-trigger { color: #fff; background: #20231f; }
+.markdown-midi .midi-staff-trigger .midi-staff-name { color: inherit; }
 .markdown-midi .midi-track-group + .midi-track-group { margin-top: 26px; }
-.markdown-midi .midi-piano-group { display: grid; gap: 0; padding: 12px 0; border-block: 1px solid rgba(91, 96, 87, .16); }
+.markdown-midi .midi-piano-group { display: grid; gap: 0; padding: 12px 0; border: 0; border-radius: 0; }
 .markdown-midi .midi-piano-group .midi-staff { border-top: 0; padding-top: 0; }
-.markdown-midi .midi-score svg { display: block; max-width: none; height: auto; }
+.markdown-midi .midi-score:empty { display: none; }
+.markdown-midi .midi-score svg { display: block; max-width: none; height: auto; color: #252823; }
+.markdown-midi .midi-score svg text { fill: currentColor; }
 .markdown-midi.is-error { color: #a22d1d; }
 .markdown-mermaid .node rect { rx: 10px; ry: 10px; }
 .markdown-mermaid .cluster rect { rx: 10px; ry: 10px; }
@@ -604,6 +612,15 @@ body.is-subpage .site-footer { border-radius: 0; }
 .page-outline-panel nav .outline-level-3::before { left: 8px; width: 5px; height: 5px; border: 0; background: currentColor; }
 .page-outline-panel nav .outline-level-3::after { content: ""; position: absolute; top: -2px; bottom: -2px; left: 11px; width: 1px; background: rgba(62,67,61,.22); }
 .page-outline-panel nav a:hover, .page-outline-panel nav a:focus-visible, .page-outline-panel nav a.is-active { color: var(--ink); background: rgba(190, 88, 64, .18); outline: none; }
+.page-outline-panel nav .outline-midi-all { display: flex; align-items: center; gap: 8px; width: 100%; margin: 4px 0 8px; padding: 8px 10px 8px 26px; border: 0; border-radius: 6px; color: var(--ink); background: transparent; font: inherit; font-size: 11px; font-weight: 800; text-align: left; cursor: pointer; }
+.page-outline-panel nav .outline-midi-all:hover, .page-outline-panel nav .outline-midi-all[aria-pressed="true"] { background: rgba(190, 88, 64, .18); }
+.outline-midi-symbol { position: absolute; margin-left: -18px; width: 12px; color: #be5840; font-size: 17px; line-height: 1; }
+.page-outline-panel nav .outline-midi-staff-link { position: relative; display: flex; align-items: baseline; gap: 6px; width: calc(100% - 18px); margin-left: 18px; padding: 8px 10px 8px 24px; border: 0; border-radius: 6px; color: #343833; background: transparent; font-family: Arial, "Helvetica Neue", "Noto Sans SC", "Microsoft YaHei", sans-serif; text-align: left; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.page-outline-panel nav .outline-midi-instrument { font-size: 12px; font-weight: 800; line-height: 1.3; }
+.page-outline-panel nav .outline-midi-native { color: #777c74; font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif; font-size: 11px; font-weight: 500; line-height: 1.3; }
+.page-outline-panel nav .outline-midi-staff-link:hover, .page-outline-panel nav .outline-midi-staff-link:focus-visible { color: var(--ink); background: rgba(190, 88, 64, .18); outline: none; }
+.page-outline-panel nav .outline-midi-staff-link:hover .outline-midi-native, .page-outline-panel nav .outline-midi-staff-link:focus-visible .outline-midi-native { color: currentColor; }
+.page-outline-panel nav .outline-midi-staff-link::before { content: ""; position: absolute; top: 50%; left: 8px; width: 5px; height: 5px; border: 0; background: currentColor; transform: translateY(-50%); }
 .page-outline-panel nav a:hover::before, .page-outline-panel nav a:focus-visible::before, .page-outline-panel nav a.is-active::before { background: #be5840; border-color: #be5840; }
 .page-outline-panel nav .outline-level-3.is-active { color: #000; font-weight: 700; }
 .directory-filter .directory-filter-menu { position: absolute; top: calc(100% + 10px); left: 0; right: auto; bottom: auto; z-index: 96; width: min(320px, 72vw); max-height: min(60vh, 420px); padding: 16px; overflow-y: auto; }

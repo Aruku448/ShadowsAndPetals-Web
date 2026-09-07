@@ -222,6 +222,34 @@
 
   function homeUrl(hash = "") { return `./index.html${String(hash || "").startsWith("#") ? hash : ""}`; }
   function pageUrl(slug, returnUrl = "") { const params = new URLSearchParams({ page: slug }); if (returnUrl) params.set("from", returnUrl); if (new URLSearchParams(location.search).get("edit") === "1" || document.body.classList.contains("editor-open")) params.set("edit", "1"); return `./index.html?${params}`; }
+  function isIndexPath(pathname) { return ["/", "/index.html"].includes(String(pathname || "/")); }
+  function localDevHost(hostname) { return ["localhost", "127.0.0.1", "0.0.0.0"].includes(String(hostname || "")); }
+  function sitePageFromUrl(href) {
+    try {
+      const url = new URL(href, location.href);
+      const slug = url.searchParams.get("page");
+      if (!slug || !isIndexPath(url.pathname)) return null;
+      const sameSite = url.origin === location.origin;
+      const devLocalLink = localDevHost(url.hostname);
+      const productionSiteLink = /(^|\.)shadowsandpetals\.com$/i.test(url.hostname);
+      if (!sameSite && !devLocalLink && !productionSiteLink) return null;
+      if (!state.pages.some((page) => page.slug === slug)) return null;
+      return { url, slug };
+    } catch { return null; }
+  }
+  function normalizeMarkdownLinks(body) {
+    body.querySelectorAll("a").forEach((link) => {
+      const pageLink = sitePageFromUrl(link.getAttribute("href") || "");
+      if (pageLink) {
+        link.href = pageUrl(pageLink.slug);
+        link.removeAttribute("target");
+        link.removeAttribute("rel");
+        return;
+      }
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    });
+  }
   function selectedPage() { return state.pages.find((page) => page.id === activePageId) || null; }
   function viewedPage() { return state.pages.find((page) => page.id === viewPageId) || null; }
   function cleanSlug(value) { return String(value || "page").trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff-]+/g, "-").replace(/^-+|-+$/g, "") || "page"; }
@@ -400,10 +428,60 @@
     return midi.tracks.map((track, index) => ({ index, track })).filter(({ track }) => track.notes.length);
   }
 
+  const midiInstrumentNames = { clarinet: "单簧管", basson: "巴松管", bassoon: "巴松管", piano: "钢琴", flute: "长笛", violin: "小提琴", cello: "大提琴", tuba: "大号", horn: "圆号", trombone: "长号", oboe: "双簧管" };
+  function midiTrackDisplayName(fileName, track) {
+    const baseName = midiBaseName(fileName);
+    const rawName = String(track.name || track.instrument?.name || "未命名声部").replace(/[\r\n]/g, " ").trim() || "未命名声部";
+    const key = rawName.toLowerCase().replace(/\s+/g, "");
+    const chineseName = midiInstrumentNames[key] || (track.instrument?.name === "acoustic grand piano" ? "钢琴" : "乐器声部");
+    return `${baseName} - ${rawName} (${chineseName})`;
+  }
+  function midiTrackShortName(track) {
+    return String(track.name || track.instrument?.name || "未命名声部").replace(/[\r\n]/g, " ").trim() || "未命名声部";
+  }
+  function midiBaseName(fileName) {
+    return String(fileName || "MIDI").replace(/\.(?:mid|midi)$/i, "").trim() || "MIDI";
+  }
+  function midiTrackOutlineParts(track) {
+    const rawName = midiTrackShortName(track);
+    const key = rawName.toLowerCase().replace(/\s+/g, "");
+    const chineseName = midiInstrumentNames[key] || (track.instrument?.name === "acoustic grand piano" ? "钢琴" : "乐器声部");
+    return { rawName, chineseName };
+  }
+  function midiTrackOutlineName(track) {
+    const { rawName, chineseName } = midiTrackOutlineParts(track);
+    return `${rawName} (${chineseName})`;
+  }
+
   function midiTrackLabel(entry) {
     const { index, track } = entry;
     const name = String(track.name || track.instrument?.name || "未命名声部").replace(/[^\x20-\x7e\u4e00-\u9fff]/g, "").trim() || "未命名声部";
     return `${String(index + 1).padStart(2, "0")} · ${name} · ${track.notes.length} 音符`;
+  }
+
+  function pianoSplitPoint(track) {
+    const pitches = [...new Set(track.notes.map((note) => note.midi))].sort((a, b) => a - b);
+    const candidates = pitches.slice(0, -1).map((pitch, index) => ({ pitch, gap: pitches[index + 1] - pitch, left: track.notes.filter((note) => note.midi <= pitch).length, right: track.notes.filter((note) => note.midi > pitch).length })).filter((item) => item.pitch >= 55 && item.pitch <= 78 && item.gap > 1);
+    const strongSplit = candidates.find((item) => item.pitch >= 68 && item.pitch <= 74 && item.right > item.left * 1.4);
+    return strongSplit?.pitch || 60;
+  }
+  function quantizeMidiUnits(ticks, unit, minimum = 0) {
+    return Math.max(minimum, Math.round(ticks / unit));
+  }
+  function groupMidiNotes(notes, unit, nearThreshold = 0) {
+    const groups = [];
+    [...notes].sort((a, b) => a.ticks - b.ticks || a.midi - b.midi).forEach((note) => {
+      const start = quantizeMidiUnits(note.ticks, unit);
+      const last = groups.at(-1);
+      const delta = last ? note.ticks - last.startTick : Infinity;
+      const sameGrid = last && start === last.start;
+      const nearStart = last && delta >= 0 && delta <= nearThreshold && last.start < 64 && start < 64;
+      if (!last || (!sameGrid && !nearStart)) groups.push({ start, startTick: note.ticks, values: [note] });
+      else last.values.push(note);
+    });
+    const grouped = new Map();
+    groups.forEach((group) => { if (!grouped.has(group.start)) grouped.set(group.start, []); grouped.get(group.start).push(...group.values.map((note) => ({ midi: note.midi, ticks: note.ticks, duration: Math.max(1, quantizeMidiUnits(note.durationTicks, unit)) }))); });
+    return grouped;
   }
 
   function midiToAbc(data, name = "MIDI", selectedTrack = null, noteRange = null, clef = "treble") {
@@ -413,9 +491,8 @@
     if (!selected) throw new Error("midi-empty");
     const notes = [...selected.track.notes].filter((note) => !noteRange || noteRange(note.midi)).sort((a, b) => a.ticks - b.ticks || b.midi - a.midi).slice(0, 4000);
     const unit = Math.max(1, midi.header.ppq / 4);
-    const grouped = new Map();
-    notes.forEach((note) => { const start = Math.max(0, Math.round(note.ticks / unit)); const duration = Math.max(1, Math.round(note.durationTicks / unit)); if (!grouped.has(start)) grouped.set(start, []); grouped.get(start).push({ midi: note.midi, duration }); });
-    const events = [...grouped.entries()].map(([start, values], index, all) => ({ start: Number(start), midi: Math.max(...values.map((value) => value.midi)), duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (all[index + 1] ? Number(all[index + 1][0]) : Infinity) - Number(start))) }));
+    const grouped = groupMidiNotes(notes, unit);
+    const events = [...grouped.entries()].map(([start, values], index, all) => ({ start: Number(start), notes: [...new Set(values.map((value) => value.midi))].sort((a, b) => a - b).map(midiNoteToAbc), arpeggio: false, duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (all[index + 1] ? Number(all[index + 1][0]) : Infinity) - Number(start))) }));
     const tokens = []; let cursor = 0; let barUnits = 0;
     const readableDurations = [16, 12, 8, 6, 4, 3, 2, 1];
     const append = (note, length) => {
@@ -429,36 +506,114 @@
         if (barUnits === 16) { tokens.push("|"); barUnits = 0; }
       }
     };
-    events.forEach((event) => { if (event.start > cursor) append("z", event.start - cursor); append(midiNoteToAbc(event.midi), event.duration); cursor = Math.max(cursor, event.start + event.duration); });
-    const trackName = String(selected.track.name || selected.track.instrument?.name || `声部 ${selected.index + 1}`).replace(/[\r\n]/g, " ");
-    return `X:1\nT:${String(name).replace(/[\r\n]/g, " ").slice(0, 56)} - ${trackName.slice(0, 24)}\nM:4/4\nL:1/16\nK:C clef=${clef}\n${tokens.join(" ")}`;
+    events.forEach((event) => { if (event.start > cursor) append("z", event.start - cursor); const note = event.notes.length > 1 ? `${event.arpeggio ? "!arpeggio!" : ""}[${event.notes.join("")}]` : event.notes[0]; append(note, event.duration); cursor = Math.max(cursor, event.start + event.duration); });
+    const trackName = midiTrackDisplayName(name, selected.track);
+    return `X:1\nM:4/4\nL:1/16\nK:C clef=${clef}\n${tokens.join(" ")}`;
   }
 
+  function midiToGrandStaffAbc(data, name, selectedTrack, splitPoint) {
+    const midi = parseMidi(data);
+    const selected = midi.tracks[selectedTrack];
+    if (!selected?.notes.length) throw new Error("midi-empty");
+    const unit = Math.max(1, midi.header.ppq / 4);
+    const makeVoice = (range) => {
+      const notes = selected.notes.filter((note) => range(note.midi)).sort((a, b) => a.ticks - b.ticks || b.midi - a.midi);
+      const grouped = groupMidiNotes(notes, unit, 48);
+      const entries = [...grouped.entries()]; const events = entries.map(([start, values], index) => ({ start: Number(start), notes: [...new Set(values.map((value) => value.midi))].sort((a, b) => a - b).map(midiNoteToAbc), arpeggio: values.length >= 2 && ((Number(start) < 64 && Math.max(...values.map((value) => value.ticks)) - Math.min(...values.map((value) => value.ticks)) <= unit * 2) || (values.length >= 3 && Math.max(...values.map((value) => value.midi)) - Math.min(...values.map((value) => value.midi)) >= 12 && Math.max(...values.map((value) => value.ticks)) - Math.min(...values.map((value) => value.ticks)) <= unit * 2 && Math.max(...values.map((value) => value.ticks)) > Math.min(...values.map((value) => value.ticks)))),duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (entries[index + 1] ? Number(entries[index + 1][0]) : Infinity) - Number(start))) }));
+      const tokens = []; const readable = [16, 12, 8, 6, 4, 3, 2, 1]; let cursor = 0; let bar = 0;
+      const append = (note, length) => { let remaining = length; while (remaining > 0) { const amount = readable.find((value) => value <= Math.min(remaining, 16 - bar)) || 1; remaining -= amount; tokens.push(`${note}${amount > 1 ? amount : ""}${note !== "z" && remaining > 0 ? "-" : ""}`); bar += amount; if (bar === 16) { tokens.push("|"); bar = 0; } } };
+      events.forEach((event) => { if (event.start > cursor) append("z", event.start - cursor); const note = event.notes.length > 1 ? `${event.arpeggio ? "!arpeggio!" : ""}[${event.notes.join("")}]` : event.notes[0]; append(note, event.duration); cursor = Math.max(cursor, event.start + event.duration); });
+      return tokens.join(" ");
+    };
+    return `X:1\nM:4/4\nL:1/16\n%%staves {RH LH}\nV:RH clef=treble\nV:LH clef=bass\nK:C\n[V:RH] ${makeVoice((midi) => midi > splitPoint)}\n[V:LH] ${makeVoice((midi) => midi <= splitPoint)}`;
+  }
+
+  function renderMidiStaff(staff) {
+    if (staff.dataset.rendered === "true") return;
+    const { midiData, midiName, trackIndex, piano, splitPoint, clef } = staff.dataset;
+    const score = staff.querySelector(".midi-score");
+    if (!score) return;
+    staff.classList.add("is-rendering");
+    score.textContent = "";
+    try {
+      const data = dataUrlToMidiBytes(midiData);
+      const availableWidth = document.querySelector("[data-page-markdown]")?.clientWidth || 1140;
+      const staffwidth = Math.max(520, Math.min(1100, availableWidth - 40));
+      const abc = piano === "true" ? midiToGrandStaffAbc(data, midiName, Number(trackIndex), Number(splitPoint)) : midiToAbc(data, midiName, Number(trackIndex), null, clef || "treble");
+      window.ABCJS.renderAbc(score, abc, { responsive: "resize", add_classes: true, staffwidth, wrap: { preferredMeasuresPerLine: 4, minSpacing: 1.5, minSpacingLimit: 1.1 } });
+      staff.dataset.rendered = "true";
+      requestAnimationFrame(() => { staff.classList.remove("is-rendering"); staff.classList.add("is-expanded"); });
+    } catch {
+      staff.dataset.rendered = "error";
+      score.textContent = "MIDI 文件无法解析或没有音符。";
+    }
+  }
+  function collapseMidiStaff(staff) {
+    if (!staff || staff.dataset.rendered !== "true") return;
+    staff.classList.remove("is-expanded");
+    staff.dataset.rendered = "false";
+    const score = staff.querySelector(".midi-score");
+    if (!score) return;
+    setTimeout(() => {
+      if (!staff.classList.contains("is-expanded")) {
+        score.replaceChildren();
+        score.removeAttribute("style");
+        score.removeAttribute("width");
+        score.removeAttribute("height");
+      }
+    }, 420);
+  }
+  function setAllMidiStaffs(figure, render) {
+    if (!figure) return;
+    figure.querySelectorAll(".midi-staff").forEach((staff) => {
+      if (render) {
+        if (staff.dataset.rendered !== "true") renderMidiStaff(staff);
+      } else if (staff.dataset.rendered === "true") collapseMidiStaff(staff);
+    });
+  }
   function midiFigure(page) {
     if (!page.midiData || !window.ABCJS) return null;
     const figure = document.createElement("figure");
     figure.className = "markdown-embed-tool markdown-midi";
-    figure.innerHTML = `<figcaption><i data-lucide="music-2"></i>${escapeHTML(page.midiName || "MIDI 总谱")}</figcaption><div class="midi-score-list"></div>`;
+    figure.innerHTML = `<div class="midi-score-list"></div>`;
     try {
       const data = dataUrlToMidiBytes(page.midiData);
       const tracks = midiTrackEntries(data);
       const list = figure.querySelector(".midi-score-list");
       if (!tracks.length) throw new Error("midi-empty");
-      tracks.forEach((entry) => {
+      tracks.forEach((entry, trackPosition) => {
         const trackLabel = midiTrackLabel(entry);
         const isPiano = /piano|键盘|钢琴/i.test(String(entry.track.name || ""));
-        const staffEntries = isPiano ? [{ label: `${trackLabel} · 右手`, clef: "treble", range: (midi) => midi >= 60 }, { label: `${trackLabel} · 左手`, clef: "bass", range: (midi) => midi < 60 }] : [{ label: trackLabel, clef: "treble", range: null }];
         const group = document.createElement("section");
         group.className = `midi-track-group${isPiano ? " midi-piano-group" : ""}`;
         list.append(group);
+        if (isPiano) {
+          const splitPoint = pianoSplitPoint(entry.track);
+          const staff = document.createElement("section");
+          staff.className = "midi-staff midi-grand-staff";
+          staff.id = `midi-score-${entry.index}`;
+          staff.innerHTML = `<h3><span class="midi-staff-title">${escapeHTML(midiBaseName(page.midiName))}</span><button type="button" class="midi-staff-trigger"><span class="midi-staff-name">${escapeHTML(midiTrackShortName(entry.track))}</span></button></h3><div class="midi-score"></div>`;
+          staff.dataset.midiData = page.midiData;
+          staff.dataset.midiName = page.midiName || "MIDI";
+          staff.dataset.trackIndex = entry.index;
+          staff.dataset.piano = "true";
+          staff.dataset.splitPoint = splitPoint;
+          group.append(staff);
+          if (trackPosition === 0) renderMidiStaff(staff);
+          return;
+        }
+        const staffEntries = [{ label: trackLabel, clef: "treble", range: null }];
         staffEntries.forEach((staffEntry) => {
           const staff = document.createElement("section");
           staff.className = "midi-staff";
-          staff.innerHTML = `<h3>${escapeHTML(staffEntry.label)}</h3><div class="midi-score"></div>`;
+          staff.id = `midi-score-${entry.index}`;
+          staff.innerHTML = `<h3><span class="midi-staff-title">${escapeHTML(midiBaseName(page.midiName))}</span><button type="button" class="midi-staff-trigger"><span class="midi-staff-name">${escapeHTML(midiTrackShortName(entry.track))}</span></button></h3><div class="midi-score"></div>`;
+          staff.dataset.midiData = page.midiData;
+          staff.dataset.midiName = page.midiName || "MIDI";
+          staff.dataset.trackIndex = entry.index;
+          staff.dataset.clef = staffEntry.clef;
           group.append(staff);
-          const availableWidth = document.querySelector("[data-page-markdown]")?.clientWidth || 1140;
-          const staffwidth = Math.max(520, Math.min(1100, availableWidth - 40));
-          window.ABCJS.renderAbc(staff.querySelector(".midi-score"), midiToAbc(data, page.midiName, entry.index, staffEntry.range, staffEntry.clef), { responsive: "resize", add_classes: true, staffwidth, wrap: { preferredMeasuresPerLine: 4, minSpacing: 1.5, minSpacingLimit: 1.1 } });
+          if (trackPosition === 0) renderMidiStaff(staff);
         });
       });
     }
@@ -537,13 +692,29 @@
   }
 
   function buildPageOutline(container) {
-    const headings = [...container.querySelectorAll("h2, h3")];
+    const headings = [...container.querySelectorAll("h2, h3")].filter((heading) => !heading.closest(".midi-staff"));
     const usedIds = new Set();
     const slugify = (text, index) => { const base = String(text).trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-").replace(/^-+|-+$/g, "") || `section-${index + 1}`; let id = `article-${base}`; let suffix = 2; while (usedIds.has(id)) id = `article-${base}-${suffix++}`; usedIds.add(id); return id; };
     headings.forEach((heading, index) => { heading.id = slugify(heading.textContent, index); });
     const outline = $("[data-page-outline]");
     if (!outline) return;
-    outline.innerHTML = headings.length ? headings.map((heading) => `<a class="outline-level-${heading.tagName.slice(1)}" href="#${heading.id}">${escapeHTML(heading.textContent)}</a>`).join("") : `<p class="outline-empty">暂无章节</p>`;
+    const midiFigures = [...container.querySelectorAll(".markdown-midi")];
+    const midiControls = midiFigures.map((figure, index) => `<button type="button" class="outline-midi-all" data-midi-render-all="${index}" aria-pressed="false"><span class="outline-midi-symbol">+</span><span>全部声部</span></button>`).join("");
+    const headingLinks = headings.map((heading) => `<a class="outline-level-${heading.tagName.slice(1)}" href="#${heading.id}">${escapeHTML(heading.textContent)}</a>`).join("");
+    const staffLinks = [...container.querySelectorAll(".midi-staff")].map((staff) => {
+      const { rawName, chineseName } = midiTrackOutlineParts({ name: staff.querySelector(".midi-staff-name")?.textContent || "未命名声部" });
+      return `<button type="button" class="outline-level-3 outline-midi-staff-link" data-midi-staff-link="${staff.id}"><span class="outline-midi-instrument">${escapeHTML(rawName)}</span><span class="outline-midi-native">(${escapeHTML(chineseName)})</span></button>`;
+    }).join("");
+    outline.innerHTML = midiControls + (headingLinks || staffLinks ? headingLinks + staffLinks : `<p class="outline-empty">暂无章节</p>`);
+    outline.querySelectorAll("[data-midi-staff-link]").forEach((link) => link.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const staff = document.getElementById(link.dataset.midiStaffLink);
+      if (!staff) return;
+      closePageOutline();
+      renderMidiStaff(staff);
+      requestAnimationFrame(() => staff.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }));
   }
 
   function updatePageOutlineActive() {
@@ -562,15 +733,15 @@
     if (!body) return;
     body.innerHTML = pageMarkdown(page);
     prepareMarkdownImages(body);
-    body.querySelectorAll("a").forEach((link) => { link.target = "_blank"; link.rel = "noopener noreferrer"; });
+    normalizeMarkdownLinks(body);
+    renderEmbeddedTools(body, page);
     buildPageOutline(body);
     updatePageOutlineActive();
     enhanceMarkdown(body);
-    renderEmbeddedTools(body, page);
     if (window.lucide) window.lucide.createIcons();
   }
 
-  function closePageOutline() { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-toggle]"); if (!panel || !toggle) return; if (panel.contains(document.activeElement)) toggle.focus(); const mobile = window.matchMedia("(max-width: 986px)").matches; panel.classList.remove("is-open"); panel.setAttribute("aria-hidden", String(mobile)); panel.inert = mobile; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-label", "打开文章大纲"); }
+  function closePageOutline() { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-header-toggle]"); if (!panel || !toggle) return; if (panel.contains(document.activeElement)) toggle.focus(); const mobile = window.matchMedia("(max-width: 986px)").matches; panel.classList.remove("is-open"); panel.setAttribute("aria-hidden", String(mobile)); panel.inert = mobile; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-label", "打开文章大纲"); }
 
   function closeFilterMenu() { const menu = $("[data-directory-category-menu]"); if (!menu || !menu.classList.contains("is-open")) return; menu.classList.remove("is-open"); menu.setAttribute("hidden", ""); menu.parentElement?.querySelector("[data-directory-category-trigger]")?.setAttribute("aria-expanded", "false"); }
 
@@ -1253,9 +1424,39 @@
     }
     const filterClose = event.target.closest("[data-directory-category-close]");
     if (filterClose) { event.preventDefault(); closeFilterMenu(); return; }
+    const midiAll = event.target.closest("[data-midi-render-all]");
+    if (midiAll) {
+      const figures = $$(".markdown-midi");
+      const figure = figures[Number(midiAll.dataset.midiRenderAll)];
+      const render = midiAll.getAttribute("aria-pressed") !== "true";
+      setAllMidiStaffs(figure, render);
+      midiAll.setAttribute("aria-pressed", String(render));
+      midiAll.querySelector(".outline-midi-symbol").textContent = render ? "−" : "+";
+      return;
+    }
+    const staffTrigger = event.target.closest(".midi-staff-trigger");
+    if (staffTrigger) {
+      const staff = staffTrigger.closest(".midi-staff");
+      if (!staff) return;
+      if (staff.dataset.rendered === "true") collapseMidiStaff(staff);
+      else if (staff.dataset.rendered !== "error") {
+        renderMidiStaff(staff);
+        staff.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+
     if (event.target.closest("[data-page-outline-toggle]")) { togglePageOutline(); return; }
     if (event.target.closest("[data-page-outline-close]")) { closePageOutline(); return; }
-    if (event.target.closest("[data-page-outline] a")) { closePageOutline(); return; }
+    const outlineLink = event.target.closest("[data-page-outline] a");
+    if (outlineLink) {
+      event.preventDefault();
+      const linkTarget = document.getElementById(outlineLink.getAttribute("href")?.slice(1));
+      closePageOutline();
+      if (linkTarget) requestAnimationFrame(() => linkTarget.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+
     const directoryLink = event.target.closest('a[href*="view=pages"]');
     if (directoryLink) {
       const url = new URL(directoryLink.href, location.href);
@@ -1275,14 +1476,13 @@
     }
     const link = event.target.closest('a[href*="?page="]');
     if (!link || link.target === "_blank") return;
-    const url = new URL(link.href, location.href);
-    if (url.origin !== location.origin || url.pathname !== location.pathname || !url.searchParams.has("page")) return;
-    if (!state.pages.some((page) => page.slug === url.searchParams.get("page"))) return;
+    const pageLink = sitePageFromUrl(link.href);
+    if (!pageLink) return;
     event.preventDefault();
     $(".search-layer").classList.remove("is-open");
     $(".search-layer").setAttribute("aria-hidden", "true");
-    history.pushState(null, "", `${url.pathname}${url.search}`);
-    previewPageFromUrl(url);
+    history.pushState(null, "", pageUrl(pageLink.slug));
+    previewPageFromUrl(new URL(location.href));
   });
   window.addEventListener("popstate", () => {
     const url = new URL(location.href);
