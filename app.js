@@ -1551,7 +1551,10 @@
     syncViewedPageFromLocation();
     render();
     const loadedBundledConfig = await loadBundledConfig();
-    if (loadedBundledConfig) render();
+    if (loadedBundledConfig) {
+      syncViewedPageFromLocation();
+      render();
+    }
     revealHeroMedia($(".hero-media"));
     if (window.lucide) window.lucide.createIcons();
     syncElementScopes();
