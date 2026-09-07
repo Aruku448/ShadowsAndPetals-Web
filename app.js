@@ -127,8 +127,8 @@
     }
     merged.customElements = Array.isArray(input.customElements) ? input.customElements : [];
     merged.pages = Array.isArray(input.pages) ? input.pages.map((page, index) => ({ ...clone(defaults.pages[0]), ...page, id: page.id || `page-${index + 1}`, tags: normalizePageTags(page.tags ?? page.eyebrow) })) : clone(defaults.pages);
-    // 文章管理不再使用父子关系；保留旧字段仅用于兼容已有配置，不参与展示或导航。
-    merged.pages.forEach((page) => { page.parentId = null; });
+    // 页面分享必须可用：当前站点配置中的页面统一作为已发布页面处理。
+    merged.pages.forEach((page) => { page.parentId = null; page.published = true; });
     merged.homeLinks = Object.fromEntries(Object.entries(input.homeLinks || {}).filter(([, pageId]) => merged.pages.some((page) => page.id === pageId)));
     merged.pages.forEach((page) => {
       if (typeof page.ctaUrl === "string") page.ctaUrl = page.ctaUrl.replace(/^\.\/#/, "./index.html#");
