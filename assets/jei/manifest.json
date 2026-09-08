@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "assetSource": {
+    "minecraft": "26.1.2 NeoForge client resources",
+    "jei": "29.5.0.28"
+  },
+  "itemNames": {
+    "minecraft:oak_log": "橡木原木",
+    "minecraft:oak_planks": "橡木木板",
+    "minecraft:crafting_table": "工作台"
+  },
+  "items": {
+    "minecraft:oak_log": {
+      "src": "assets/jei/items/minecraft/oak_log.png",
+      "name": "橡木原木"
+    },
+    "minecraft:oak_planks": {
+      "src": "assets/jei/items/minecraft/oak_planks.png",
+      "name": "橡木木板"
+    },
+    "minecraft:crafting_table": {
+      "src": "assets/jei/items/minecraft/crafting_table_front.png",
+      "name": "工作台"
+    }
+  },
+  "recipes": {
+    "demo:crafting-table": {
+      "layout": "crafting",
+      "title": "工作台",
+      "width": 2,
+      "height": 2,
+      "grid": [
+        "minecraft:oak_planks",
+        "minecraft:oak_planks",
+        "minecraft:oak_planks",
+        "minecraft:oak_planks"
+      ],
+      "output": {
+        "item": "minecraft:crafting_table",
+        "count": 1
+      }
+    },
+    "demo:oak-planks": {
+      "layout": "crafting",
+      "title": "木板",
+      "width": 1,
+      "height": 1,
+      "grid": ["minecraft:oak_log"],
+      "output": {
+        "item": "minecraft:oak_planks",
+        "count": 4
+      }
+    }
+  }
+}

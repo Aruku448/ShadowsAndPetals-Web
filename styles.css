@@ -588,6 +588,31 @@ body.is-subpage .site-footer { border-radius: 0; }
 .markdown-midi.is-error { color: #a22d1d; }
 .markdown-mermaid .node rect { rx: 10px; ry: 10px; }
 .markdown-mermaid .cluster rect { rx: 10px; ry: 10px; }
+.markdown-jei { --jei-scale: 2; --jei-width: 116; --jei-height: 54; display: flex; align-items: center; flex-direction: column; gap: 10px; max-width: 100%; margin: 2em 0 2.4em; }
+.markdown-jei .jei-viewport { display: flex; justify-content: center; width: 100%; max-width: 100%; padding: 10px 4px 14px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.markdown-jei .jei-frame { position: relative; box-sizing: border-box; flex: 0 0 auto; width: calc((var(--jei-width) + 8) * var(--jei-scale) * 1px); height: calc((var(--jei-height) + 8) * var(--jei-scale) * 1px); border: calc(var(--jei-scale) * 4px) solid transparent; border-image: url("./assets/jei/ui/single_recipe_background.png") 16 fill / calc(var(--jei-scale) * 4px) / 0 stretch; background-color: #c6c6c6; image-rendering: pixelated; }
+.markdown-jei .jei-frame.is-plain { width: calc(var(--jei-width) * var(--jei-scale) * 1px); height: calc(var(--jei-height) * var(--jei-scale) * 1px); border: 0; border-image: none; background: transparent; }
+.markdown-jei .jei-stage-shell { position: relative; flex: 0 0 auto; width: calc(var(--jei-width) * var(--jei-scale) * 1px); height: calc(var(--jei-height) * var(--jei-scale) * 1px); }
+.markdown-jei .jei-stage { position: absolute; top: 0; left: 0; width: calc(var(--jei-width) * 1px); height: calc(var(--jei-height) * 1px); overflow: hidden; transform: scale(var(--jei-scale)); transform-origin: top left; color: #111; background: #c6c6c6; font-family: "Courier New", "Noto Sans SC", "Microsoft YaHei", monospace; image-rendering: pixelated; }
+.markdown-jei .jei-slot { position: absolute; display: grid; place-items: center; width: 16px; height: 16px; background: url("./assets/jei/ui/slot.png") 0 0 / 18px 18px no-repeat; }
+.markdown-jei .jei-slot-output { background-image: url("./assets/jei/ui/output_slot.png"); background-position: -5px -5px; background-size: 26px 26px; }
+.markdown-jei .jei-item { position: relative; display: block; width: 16px; height: 16px; color: #202020; font-size: 4px; font-weight: 700; line-height: 1; text-align: center; }
+.markdown-jei .jei-item-image { display: block; width: 16px; height: 16px; margin: 0; object-fit: contain; image-rendering: pixelated; }
+.markdown-jei .jei-item-fallback { display: grid; place-items: center; width: 16px; height: 16px; padding: 1px; overflow: hidden; color: #202020; background: transparent; font-family: Arial, sans-serif; font-size: 4px; font-weight: 800; line-height: 1; }
+.markdown-jei .jei-item-count { position: absolute; right: -1px; bottom: -2px; z-index: 1; color: #fff; font-family: Arial, sans-serif; font-size: 9px; font-weight: 700; line-height: 1; text-shadow: 1px 1px #222, -1px 1px #222, 1px -1px #222, -1px -1px #222; }
+.markdown-jei .jei-arrow { position: absolute; top: 19px; left: 61px; width: 22px; height: 16px; background: url("./assets/jei/ui/recipe_arrow.png") 0 0 / 22px 16px no-repeat; }
+.markdown-jei .jei-caption { max-width: 100%; color: #777870; font-size: 12px; line-height: 1.5; text-align: center; }
+.markdown-jei-error { align-items: flex-start; padding: 14px 16px; border: 1px solid #d5a39b; border-left: 4px solid #b44b38; border-radius: 10px; color: #7d2d21; background: #fff3f0; }
+.markdown-jei-error .jei-error-label { margin: 0 0 6px; font-size: 13px; font-weight: 800; }
+.markdown-jei-error .jei-error-detail { padding: 0; border: 0; color: inherit; background: transparent; font-size: 12px; white-space: pre-wrap; }
+.markdown-body .markdown-jei img { max-width: none; margin: 0; }
+.markdown-body .markdown-jei button { font: inherit; }
+@media (max-width: 700px) {
+  .markdown-jei .jei-viewport { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .markdown-jei .jei-arrow { animation: none; }
+}
 .markdown-body a { overflow-wrap: anywhere; }
 .subpage-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; }
 .outline-toggle { display: inline-flex; align-items: center; gap: 9px; min-height: 34px; padding: 0 0 7px; border: 0; border-bottom: 1px solid var(--ink); color: var(--ink); background: transparent; font-size: 12px; font-weight: 800; cursor: pointer; }

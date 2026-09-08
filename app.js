@@ -626,19 +626,319 @@
     return figure;
   }
 
+  const JEI_MANIFEST_URL = "./assets/jei/manifest.json";
+  const JEI_ID_PATTERN = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
+  const JEI_CRAFTING_WIDTH = 116;
+  const JEI_CRAFTING_HEIGHT = 54;
+  let jeiManifestPromise = null;
+
+  function jeiErrorFigure(message, source = "") {
+    const figure = document.createElement("figure");
+    figure.className = "markdown-embed-tool markdown-jei markdown-jei-error";
+    figure.setAttribute("data-jei-source", String(source || ""));
+    const label = document.createElement("p");
+    label.className = "jei-error-label";
+    label.textContent = "JEI 配方无法渲染";
+    const detail = document.createElement("code");
+    detail.className = "jei-error-detail";
+    detail.textContent = String(message || "未知错误");
+    figure.append(label, detail);
+    return figure;
+  }
+
+  function safeJeiInteger(value, fallback, min, max) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.max(min, Math.min(max, Math.round(number)));
+  }
+
+  function safeJeiScale(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 2;
+    return Math.max(1, Math.min(4, Math.round(number)));
+  }
+
+  function isSafeJeiId(value) {
+    const text = String(value || "").trim();
+    if (!JEI_ID_PATTERN.test(text)) return false;
+    const path = text.slice(text.indexOf(":") + 1);
+    return !path.split("/").some((segment) => segment === "..");
+  }
+
+  function safeJeiAssetUrl(source) {
+    const value = String(source || "").trim();
+    if (!value) return "";
+    if (/^(?:https?:|data:image\/)/i.test(value)) return value;
+    if (value.split("/").some((segment) => segment === "..")) return "";
+    if (/^(?:\.\/|\/)?[a-z0-9][a-z0-9._/-]*$/i.test(value)) return value;
+    return "";
+  }
+
+  function jeiDefaultItemSource(id) {
+    const value = String(id || "").trim();
+    if (!isSafeJeiId(value)) return "";
+    const [namespace, path] = value.split(":");
+    return `assets/jei/items/${namespace}/${path}.png`;
+  }
+
+  function normalizeJeiItem(value) {
+    if (typeof value === "string" && value.trim()) return { id: value.trim() };
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const id = typeof value.item === "string" ? value.item : value.id;
+    if (typeof id !== "string" && typeof value.src !== "string") return null;
+    return { ...value, ...(typeof id === "string" ? { id: id.trim() } : {}) };
+  }
+
+  function jeiItemCandidates(value) {
+    const values = Array.isArray(value)
+      ? value
+      : value && typeof value === "object" && Array.isArray(value.items)
+        ? value.items
+        : [value];
+    return values.map(normalizeJeiItem).filter(Boolean);
+  }
+
+  function jeiItemLabel(descriptor, context) {
+    const id = String(descriptor?.id || "");
+    const name = descriptor?.name || context.itemNames[id];
+    if (name) return String(name);
+    return id || "未命名物品";
+  }
+
+  function jeiItemFallbackLabel(descriptor) {
+    const id = String(descriptor?.id || descriptor?.name || "?");
+    const path = id.includes(":") ? id.slice(id.indexOf(":") + 1) : id;
+    const last = path.split("/").pop() || "?";
+    return last.replace(/[_-]+/g, " ").slice(0, 4).toUpperCase();
+  }
+
+  function renderJeiItem(value, context, figure) {
+    const candidates = jeiItemCandidates(value);
+    const item = document.createElement("span");
+    item.className = "jei-item";
+    if (!candidates.length) return item;
+
+    const image = document.createElement("img");
+    image.className = "jei-item-image";
+    image.alt = "";
+    image.draggable = false;
+    const fallback = document.createElement("span");
+    fallback.className = "jei-item-fallback";
+    fallback.hidden = true;
+    const count = document.createElement("span");
+    count.className = "jei-item-count";
+    item.append(image, fallback, count);
+
+    let candidateIndex = 0;
+    const paint = () => {
+      const descriptor = candidates[candidateIndex % candidates.length];
+      const id = String(descriptor.id || "");
+      const itemAsset = context.itemAssets[id];
+      const source = [descriptor.src, descriptor.preview, itemAsset?.src, itemAsset?.preview, jeiDefaultItemSource(id)]
+        .map(safeJeiAssetUrl)
+        .find(Boolean) || "";
+      const label = jeiItemLabel(descriptor, context);
+      const amount = Number(descriptor.count ?? value?.count ?? 1);
+      item.title = amount > 1 ? `${label} × ${amount}` : label;
+      item.setAttribute("aria-label", item.title);
+      image.alt = label;
+      fallback.textContent = jeiItemFallbackLabel(descriptor);
+      fallback.title = id ? `${label} (${id})` : label;
+      fallback.setAttribute("aria-label", fallback.title);
+      fallback.hidden = Boolean(source);
+      image.hidden = !source;
+      count.textContent = Number.isFinite(amount) && amount > 1 ? String(Math.min(999, Math.round(amount))) : "";
+      if (!source) return;
+      image.hidden = false;
+      image.src = source;
+    };
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      fallback.hidden = false;
+    }, { once: false });
+    paint();
+
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (candidates.length > 1 && !reduceMotion) {
+      const cycle = () => {
+        if (!figure.isConnected) return;
+        candidateIndex = (candidateIndex + 1) % candidates.length;
+        paint();
+        window.setTimeout(cycle, 1200);
+      };
+      window.setTimeout(cycle, 1200);
+    }
+    return item;
+  }
+
+  function craftingGridIndex(index, width, height) {
+    if (width === 1) {
+      if (height === 2 || height === 3) return index * 3 + 1;
+      return 4;
+    }
+    if (height === 1) return index + 3;
+    if (width === 2) {
+      let result = index;
+      if (index > 1) result += 1;
+      if (index > 3) result += 1;
+      return result;
+    }
+    if (height === 2) return index + 3;
+    return index;
+  }
+
+  function normalizeCraftingGrid(recipe) {
+    const source = Array.isArray(recipe.grid)
+      ? recipe.grid
+      : Array.isArray(recipe.ingredients)
+        ? recipe.ingredients
+        : [];
+    const width = safeJeiInteger(recipe.width, 3, 1, 3);
+    const height = safeJeiInteger(recipe.height, 3, 1, 3);
+    if (source.length >= 9 && width === 3 && height === 3) return source.slice(0, 9);
+    const grid = Array(9).fill(null);
+    source.slice(0, width * height).forEach((item, index) => {
+      grid[craftingGridIndex(index, width, height)] = item;
+    });
+    return grid;
+  }
+
+  function createJeiSlot(value, x, y, context, figure, output = false) {
+    const slot = document.createElement("span");
+    slot.className = `jei-slot${output ? " jei-slot-output" : ""}`;
+    slot.style.left = `${x}px`;
+    slot.style.top = `${y}px`;
+    if (value != null) slot.append(renderJeiItem(value, context, figure));
+    return slot;
+  }
+
+  function renderJeiCrafting(recipe, options, manifest, recipeId) {
+    const figure = document.createElement("figure");
+    figure.className = "markdown-embed-tool markdown-jei markdown-jei-crafting";
+    figure.dataset.jeiLayout = "crafting";
+    if (recipeId) figure.dataset.jeiRecipe = recipeId;
+
+    const scale = safeJeiScale(options.scale ?? recipe.scale);
+    figure.style.setProperty("--jei-scale", String(scale));
+    figure.style.setProperty("--jei-width", String(JEI_CRAFTING_WIDTH));
+    figure.style.setProperty("--jei-height", String(JEI_CRAFTING_HEIGHT));
+
+    const viewport = document.createElement("div");
+    viewport.className = "jei-viewport";
+    const frame = document.createElement("div");
+    frame.className = `jei-frame${options.showChrome === false || recipe.showChrome === false ? " is-plain" : ""}`;
+    const shell = document.createElement("div");
+    shell.className = "jei-stage-shell";
+    const stage = document.createElement("div");
+    stage.className = "jei-stage";
+    stage.setAttribute("role", "group");
+    stage.setAttribute("aria-label", String(options.ariaLabel || recipe.ariaLabel || recipe.title || recipeId || "Crafting 配方"));
+    shell.append(stage);
+    frame.append(shell);
+    viewport.append(frame);
+    figure.append(viewport);
+
+    const context = {
+      itemAssets: { ...(manifest.items || {}), ...(recipe.items || {}) },
+      itemNames: manifest.itemNames || {},
+    };
+    normalizeCraftingGrid(recipe).forEach((item, index) => {
+      const x = 1 + (index % 3) * 18;
+      const y = 1 + Math.floor(index / 3) * 18;
+      stage.append(createJeiSlot(item, x, y, context, figure));
+    });
+
+    const arrow = document.createElement("span");
+    arrow.className = "jei-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    stage.append(arrow);
+    stage.append(createJeiSlot(recipe.output ?? recipe.result, 95, 19, context, figure, true));
+
+    const caption = options.caption ?? recipe.caption;
+    if (caption) {
+      const figcaption = document.createElement("figcaption");
+      figcaption.className = "jei-caption";
+      figcaption.textContent = String(caption);
+      figure.append(figcaption);
+    }
+    return figure;
+  }
+
+  const jeiLayoutRenderers = {
+    crafting: renderJeiCrafting,
+    "crafting-grid": renderJeiCrafting,
+  };
+
+  async function loadJeiManifest() {
+    if (jeiManifestPromise) return jeiManifestPromise;
+    jeiManifestPromise = fetch(JEI_MANIFEST_URL, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : {})
+      .catch(() => ({}));
+    return jeiManifestPromise;
+  }
+
+  function parseJeiSource(source) {
+    const text = String(source || "").trim();
+    if (!text) throw new Error("代码块为空");
+    if (text.startsWith("{")) {
+      const parsed = JSON.parse(text);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("JSON 必须是对象");
+      return parsed;
+    }
+    if (!isSafeJeiId(text)) throw new Error("需要安全的 namespace:path 格式配方 ID");
+    return { recipe: text };
+  }
+
+  async function jeiFigure(page, source) {
+    try {
+      const requested = parseJeiSource(source);
+      const manifest = await loadJeiManifest();
+      const recipeId = typeof requested.recipe === "string" ? requested.recipe : "";
+      if (recipeId && !isSafeJeiId(recipeId)) throw new Error("配方 ID 不是安全的 namespace:path 格式");
+      const registered = recipeId ? manifest.recipes?.[recipeId] : null;
+      const recipe = registered ? {
+        ...registered,
+        ...requested,
+        ...(registered.output || requested.output ? { output: { ...(registered.output || {}), ...(requested.output || {}) } } : {}),
+      } : requested;
+      const layout = String(recipe.layout || recipe.type || "crafting").toLowerCase();
+      const renderer = jeiLayoutRenderers[layout];
+      if (!renderer) throw new Error(`暂不支持 ${layout} 布局`);
+      if (!Array.isArray(recipe.grid) && !Array.isArray(recipe.ingredients) && !registered) throw new Error("Crafting 配方缺少 grid");
+      return renderer(recipe, requested, manifest, recipeId);
+    } catch (error) {
+      return jeiErrorFigure(error?.message || "未知错误", source);
+    }
+  }
+
   const embeddedToolRenderers = {
     midi: (page) => midiFigure(page),
     mid: (page) => midiFigure(page),
+    jei: (page, source) => jeiFigure(page, source),
+    crafting: (page, source) => jeiFigure(page, source),
+    "jei-crafting": (page, source) => jeiFigure(page, source),
   };
 
-  function renderEmbeddedTools(body, page) {
+  async function renderEmbeddedTools(body, page) {
+    const pending = [];
     body.querySelectorAll("pre > code[class*='language-']").forEach((code) => {
       const toolName = [...code.classList].find((className) => className.startsWith("language-"))?.slice(9).toLowerCase();
       const renderer = embeddedToolRenderers[toolName];
       if (!renderer) return;
-      const tool = renderer(page);
-      if (tool) code.parentElement.replaceWith(tool);
+      const replace = (tool) => {
+        if (tool && code.parentElement) code.parentElement.replaceWith(tool);
+      };
+      try {
+        const tool = renderer(page, code.textContent.trim(), code);
+        if (tool && typeof tool.then === "function") {
+          pending.push(Promise.resolve(tool).then(replace).catch((error) => replace(jeiErrorFigure(error?.message || "嵌入组件渲染失败", code.textContent.trim()))));
+        }
+        else replace(tool);
+      } catch (error) {
+        replace(jeiErrorFigure(error?.message || "嵌入组件渲染失败", code.textContent.trim()));
+      }
     });
+    await Promise.all(pending);
   }
 
   function markdownSource(source) {
@@ -736,14 +1036,18 @@
   function renderPageMarkdown(page) {
     const body = $("[data-page-markdown]");
     if (!body) return;
+    const renderToken = String(Number(body.dataset.markdownRenderToken || 0) + 1);
+    body.dataset.markdownRenderToken = renderToken;
     body.innerHTML = pageMarkdown(page);
     prepareMarkdownImages(body);
     normalizeMarkdownLinks(body);
-    renderEmbeddedTools(body, page);
-    buildPageOutline(body);
-    updatePageOutlineActive();
-    enhanceMarkdown(body);
-    if (window.lucide) window.lucide.createIcons();
+    renderEmbeddedTools(body, page).finally(() => {
+      if (body.dataset.markdownRenderToken !== renderToken) return;
+      buildPageOutline(body);
+      updatePageOutlineActive();
+      enhanceMarkdown(body);
+      if (window.lucide) window.lucide.createIcons();
+    });
   }
 
   function closePageOutline() { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-header-toggle]"); if (!panel || !toggle) return; if (panel.contains(document.activeElement)) toggle.focus(); const mobile = window.matchMedia("(max-width: 986px)").matches; panel.classList.remove("is-open"); panel.setAttribute("aria-hidden", String(mobile)); panel.inert = mobile; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-label", "打开文章大纲"); }
