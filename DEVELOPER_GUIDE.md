@@ -151,6 +151,34 @@
 
 验证至少覆盖：首页、有效 `index.html?page=`、无效 `index.html?page=`、编辑器新增/修改/复制/删除、刷新后的本地保存，以及桌面与移动端首屏。
 
+### JEI Crafting 配方块
+
+文章正文支持用 `jei` 代码块嵌入可复用的 Crafting 配方。代码块正文可以直接写清单中的配方 ID：
+
+````markdown
+```jei
+demo:crafting-table
+```
+````
+
+也可以用 JSON 覆盖显示参数，适合只在某篇文章中调整缩放或说明文字：
+
+````markdown
+```jei
+{
+  "recipe": "demo:oak-planks",
+  "scale": 3,
+  "caption": "原木可合成为 4 个木板"
+}
+```
+````
+
+配方和物品清单位于 `assets/jei/manifest.json`。`assets/jei/ui/` 中的槽位、箭头和背景 PNG 是从当前 JEI 29.5.0.28 atlas 原样提取的，`assets/jei/items/minecraft/` 中的物品贴图来自 Minecraft 26.1.2 客户端资源；更新游戏或 JEI 版本时应重新提取对应资源，不要用手绘 SVG 替换。当前 `layout: "crafting"` 使用 JEI 的 116×54 逻辑像素画布：输入槽按 18 像素间距排列，输出槽固定在 `(95, 19)`。`width`/`height` 可取 1–3，`grid` 或 `ingredients` 按紧凑网格顺序填写，空槽使用 `null`；物品可写成 `namespace:item`，或写成 `{ "item": "...", "count": 4 }`。物品条目中的 `src` 应指向仓库内图片（也支持公开 HTTPS），素材失效时组件会显示物品名称作为降级内容。
+
+渲染器只接受 `namespace:path` 配方 ID，并通过 DOM API 创建节点；未知布局、非法 JSON 或缺少网格时会显示可读错误框。多个候选物品可用 `{ "items": ["...", "..."] }`，组件会按 JEI 风格轮换，系统启用“减少动态效果”时固定第一项。配方画布带有屏幕阅读器标签、物品名称和数量说明；页面不渲染 JEI 侧边书签按钮，避免把装饰性控件误认为可用收藏功能。
+
+新增布局时，在 `app.js` 的 `embeddedToolRenderers` 中注册新的代码块别名，并为该布局增加独立的 `renderJei*` 函数和样式；不要把渲染后的 HTML 写入页面配置，正文仍保存原始 Markdown。
+
 ## 保存、导入和导出
 
 本地配置 key 是 `ashfall-home-config-v2`。`saveState()` 在内容或样式变化后写入 `localStorage`；`pagehide` 会再次同步保存。导入时必须经过 `mergeConfig()`，让旧配置补齐新字段，不要直接把导入 JSON 当作完整 state 使用。
