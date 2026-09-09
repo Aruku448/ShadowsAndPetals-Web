@@ -380,7 +380,7 @@
     }
     const wallImages = directoryHeroImages.length ? directoryHeroImages : ["assets/hero-ashfall.png"];
     directory.hidden = false;
-    directory.innerHTML = `<section class="directory-hero"><div class="section-tag"><span>07</span><p>文章 / Archive</p></div><div><h1>织影落花集<br /><br /><br /></h1><p>通过标签浏览文章。文章之间彼此独立，不再受页面层级限制。</p></div></section><section class="directory-toolbar"><div class="directory-toolbar-controls"><form class="directory-search" data-directory-search-form><label for="directory-search-input">搜索文章</label><div><i data-lucide="search" aria-hidden="true"></i><input id="directory-search-input" type="search" data-directory-search value="${escapeHTML(query)}" placeholder="标题、摘要或正文" /><button class="icon-button" type="submit" aria-label="搜索文章" data-tooltip="搜索"><i data-lucide="arrow-right"></i></button></div></form><div class="directory-filter"><span class="directory-filter-title">按标签筛选</span><button class="directory-filter-trigger" type="button" data-directory-category-trigger aria-haspopup="listbox" aria-expanded="false"><span data-directory-category-label>${escapeHTML(category || "全部文章")}</span><i data-lucide="chevron-down" aria-hidden="true"></i></button><div class="page-outline-panel directory-filter-menu" data-directory-category-menu aria-label="按标签筛选" hidden><div class="outline-header"><span>按标签筛选</span><button class="icon-button outline-close" type="button" data-directory-category-close aria-label="关闭筛选"><i data-lucide="x" aria-hidden="true"></i></button></div><nav>${["", ...categories].map((item) => `<a href="#" class="outline-level-3${item === category ? " is-active" : ""}" style="--tag-color:${categoryTagColor(item)}" data-category-value="${escapeHTML(item)}">${item ? escapeHTML(item) : "全部文章"}</a>`).join("")}</nav></div></div><button type="button" class="directory-special-tag${category === "织影落花" ? " is-active" : ""}" style="--tag-color:${categoryTagColor("织影落花")}" data-directory-special-tag="织影落花"><span class="directory-special-logo" aria-hidden="true"></span>织影落花</button></div><p>${allPages.length} 篇文章</p></section><section class="directory-grid">${items.map((page, index) => `<a class="directory-card${index === 0 && safePage === 1 ? " directory-card-featured" : ""}${(page.tags || []).includes("织影落花") ? " directory-card-special" : ""}" href="${pageUrl(page.slug, `${location.pathname}${location.search}`)}"><div class="directory-card-image story-media"><img src="${escapeHTML(page.heroImage)}" alt="" loading="lazy" decoding="async" data-directory-card-image /></div><div class="directory-card-content"><div class="directory-card-tags">${(page.tags || []).map((tag) => `<span style="--tag-color:${pageTagColor(page, tag)}">${escapeHTML(tag)}</span>`).join("")}</div><h2>${escapeHTML(page.title || "未命名页面").replace(/\n/g, "<br />")}</h2><p>${escapeHTML(page.summary || "暂无摘要")}</p>${(page.tags || []).includes("织影落花") ? `<img class="directory-card-logo" src="assets/织影落花.svg" alt="织影落花 Logo" aria-hidden="true" />` : `<i data-lucide="arrow-up-right"></i>`}</div></a>`).join("")}</section><nav class="directory-pagination" aria-label="文章分页">${Array.from({ length: totalPages }, (_, index) => `<a href="${pageDirectoryUrl(index + 1, category, query)}"${index + 1 === safePage ? " aria-current=\"page\"" : ""}>${String(index + 1).padStart(2, "0")}</a>`).join("")}</nav>`;
+    directory.innerHTML = `<section class="directory-hero"><div class="section-tag"><span>07</span><p>文章 / Archive</p></div><div><h1>织影落花集<br /><br /><br /></h1><p>通过标签浏览文章。文章之间彼此独立，不再受页面层级限制。</p></div></section><section class="directory-toolbar"><div class="directory-toolbar-controls"><form class="directory-search" data-directory-search-form><label for="directory-search-input">搜索文章</label><div><i data-lucide="search" aria-hidden="true"></i><input id="directory-search-input" type="search" data-directory-search value="${escapeHTML(query)}" placeholder="标题、摘要或正文" /><button class="icon-button" type="submit" aria-label="搜索文章" data-tooltip="搜索"><i data-lucide="arrow-right"></i></button></div></form><div class="directory-filter"><span class="directory-filter-title">按标签筛选</span><button class="directory-filter-trigger" type="button" data-directory-category-trigger aria-haspopup="listbox" aria-expanded="false"><span data-directory-category-label>${escapeHTML(category || "全部文章")}</span><i data-lucide="chevron-down" aria-hidden="true"></i></button><div class="page-outline-panel directory-filter-menu" data-directory-category-menu aria-label="按标签筛选" hidden><div class="outline-header"><span>按标签筛选</span><button class="icon-button outline-close" type="button" data-directory-category-close aria-label="关闭筛选"><i data-lucide="x" aria-hidden="true"></i></button></div><nav>${["", ...categories].map((item) => `<a href="#" class="outline-level-3${item === category ? " is-active" : ""}" style="--tag-color:${categoryTagColor(item)}" data-category-value="${escapeHTML(item)}">${item ? escapeHTML(item) : "全部文章"}</a>`).join("")}</nav></div></div><button type="button" class="directory-special-tag${category === "织影落花" ? " is-active" : ""}" style="--tag-color:${categoryTagColor("织影落花")}" data-directory-special-tag="织影落花"><span class="directory-special-logo" aria-hidden="true"></span>织影落花</button></div><p>${allPages.length} 篇文章</p></section><section class="directory-grid">${items.map((page, index) => `<a class="directory-card reveal-card${index === 0 && safePage === 1 ? " directory-card-featured" : ""}${(page.tags || []).includes("织影落花") ? " directory-card-special" : ""}" href="${pageUrl(page.slug, `${location.pathname}${location.search}`)}"><div class="directory-card-image story-media"><img src="${escapeHTML(page.heroImage)}" alt="" loading="lazy" decoding="async" data-directory-card-image /></div><div class="directory-card-content"><div class="directory-card-tags">${(page.tags || []).map((tag) => `<span style="--tag-color:${pageTagColor(page, tag)}">${escapeHTML(tag)}</span>`).join("")}</div><h2>${escapeHTML(page.title || "未命名页面").replace(/\n/g, "<br />")}</h2><p>${escapeHTML(page.summary || "暂无摘要")}</p>${(page.tags || []).includes("织影落花") ? `<img class="directory-card-logo" src="assets/织影落花.svg" alt="织影落花 Logo" aria-hidden="true" />` : `<i data-lucide="arrow-up-right"></i>`}</div></a>`).join("")}</section><nav class="directory-pagination" aria-label="文章分页">${Array.from({ length: totalPages }, (_, index) => `<a href="${pageDirectoryUrl(index + 1, category, query)}"${index + 1 === safePage ? " aria-current=\"page\"" : ""}>${String(index + 1).padStart(2, "0")}</a>`).join("")}</nav>`;
     const hero = directory.querySelector(".directory-hero");
     if (hero) {
       hero.classList.add("directory-hero-cover");
@@ -413,6 +413,7 @@
       directorySearch?.dispatchEvent(new Event("input", { bubbles: true }));
     });
     if (window.lucide) window.lucide.createIcons();
+    requestAnimationFrame(() => directory.querySelectorAll(".directory-card.reveal-card").forEach((card) => card.classList.add("is-visible")));
   }
 
   function revealHeroMedia(image) {
@@ -1053,9 +1054,11 @@
       if (!staff) return;
       closePageOutline();
       renderMidiStaff(staff);
-      requestAnimationFrame(() => staff.scrollIntoView({ behavior: "smooth", block: "start" }));
+      requestAnimationFrame(() => scrollToArticleTarget(staff));
     }));
   }
+
+  function scrollToArticleTarget(target) { const header = $(".site-header"); const offset = (header?.offsetHeight || 0) + 24; const top = window.scrollY + target.getBoundingClientRect().top - offset; window.scrollTo({ top: Math.max(0, top), behavior: "smooth" }); if (!target.matches("h2, h3")) return; const duration = 3000; target.style.setProperty("--outline-jump-duration", `${duration}ms`); target.classList.remove("outline-jump-prepare", "outline-jump-highlight", "outline-jump-exit"); window.setTimeout(() => { if (!target.isConnected || !target.matches("h2, h3")) return; target.textContent = target.textContent || ""; target.classList.add("outline-jump-prepare"); window.setTimeout(() => { if (!target.isConnected) return; target.classList.remove("outline-jump-prepare"); void target.offsetWidth; target.classList.add("outline-jump-highlight"); window.setTimeout(() => target.classList.remove("outline-jump-highlight"), duration + 100); }, 600); }, 450); }
 
   function updatePageOutlineActive() {
     const body = $("[data-page-markdown]");
@@ -1901,7 +1904,7 @@
       if (staff.dataset.rendered === "true") collapseMidiStaff(staff);
       else if (staff.dataset.rendered !== "error") {
         renderMidiStaff(staff);
-        staff.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollToArticleTarget(staff);
       }
       return;
     }
@@ -1913,7 +1916,7 @@
       event.preventDefault();
       const linkTarget = document.getElementById(outlineLink.getAttribute("href")?.slice(1));
       closePageOutline();
-      if (linkTarget) requestAnimationFrame(() => linkTarget.scrollIntoView({ behavior: "smooth", block: "start" }));
+      if (linkTarget) requestAnimationFrame(() => scrollToArticleTarget(linkTarget));
       return;
     }
 
@@ -2014,14 +2017,16 @@
   $(".download-button")?.addEventListener("click", (event) => { if (!state.downloadUrl || state.downloadUrl === "#") { event.preventDefault(); showToast("请在编辑器中填写下载链接"); } });
 
   function revealInViewport() { $$(".reveal, .reveal-card, .media-reveal").forEach((element) => { const rect = element.getBoundingClientRect(); if (rect.top < window.innerHeight * .94 && rect.bottom > -40) element.classList.add("is-visible"); }); }
-  let colorFrame; window.addEventListener("scroll", () => { const y = window.scrollY; $(".site-header").classList.toggle("is-scrolled", y > 40); const subpageHero = document.querySelector(".subpage-hero"); const subpageBack = document.querySelector(".subpage-back"); if (subpageHero && subpageBack) subpageBack.classList.toggle("subpage-back-scrolled", y > subpageHero.offsetHeight - 150); const max = document.documentElement.scrollHeight - window.innerHeight; $(".scroll-progress span").style.width = `${max ? y / max * 100 : 0}%`; document.documentElement.style.setProperty("--hero-shift", `${Math.min(y * .04, 32)}px`); revealInViewport(); updatePageOutlineActive(); if (!colorFrame) colorFrame = requestAnimationFrame(() => { colorFrame = null; updateWordWave(); }); }, { passive: true }); window.addEventListener("resize", () => { revealInViewport(); updateWordWave(); }, { passive: true });
+  let colorFrame; window.addEventListener("scroll", () => { const y = window.scrollY; $(".site-header").classList.toggle("is-scrolled", y > 40); const subpageHero = document.querySelector(".subpage-hero"); const subpageBack = document.querySelector(".subpage-back"); if (subpageHero && subpageBack) subpageBack.classList.toggle("subpage-back-scrolled", y > subpageHero.offsetHeight - 150); const max = document.documentElement.scrollHeight - window.innerHeight; $(".scroll-progress span").style.width = `${max ? y / max * 100 : 0}%`; document.documentElement.style.setProperty("--hero-shift", `${Math.min(y * .04, 32)}px`); revealInViewport(); updatePageOutlineActive(); if (!colorFrame) colorFrame = requestAnimationFrame(() => { colorFrame = null; updateWordWave(); }); }, { passive: true }); window.addEventListener("resize", () => { syncViewportMode(); revealInViewport(); updateWordWave(); }, { passive: true });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") { if ($(".trailer-layer").classList.contains("is-open")) closeTrailer(); else if ($(".menu-layer").classList.contains("is-open")) $(".menu-close").click(); else if ($(".search-layer").classList.contains("is-open")) $(".search-close").click(); else if ($("[data-page-outline-panel].is-open")) closePageOutline(); else if (document.body.classList.contains("editor-open")) toggleEditor(false); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && document.body.classList.contains("editor-open")) { event.preventDefault(); (event.shiftKey ? $(".redo-button") : $(".undo-button")).click(); }
   });
 
+  function syncViewportMode() { const browserWindow = !document.fullscreenElement && window.screen?.height && window.innerHeight < window.screen.height - 80; document.body.classList.toggle("is-browser-window", Boolean(browserWindow)); }
   function observeReveals() { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), { threshold: .08 }); $$(".reveal, .reveal-card, .media-reveal").forEach((element) => observer.observe(element)); }
   async function bootstrap() {
+    syncViewportMode();
     if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, theme: "base", securityLevel: "strict", themeVariables: { primaryColor: "#eef0e8", primaryTextColor: "#30332e", primaryBorderColor: "#62665f", lineColor: "#62665f", tertiaryColor: "#f5f4ed" } });
     syncViewedPageFromLocation();
     await loadBundledConfig();
