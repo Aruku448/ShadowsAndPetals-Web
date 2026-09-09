@@ -119,7 +119,7 @@
 
   function normalizePageTags(value) {
     const values = Array.isArray(value) ? value : String(value || "").split(/[,，、\n]/);
-    return [...new Set(values.map((tag) => String(tag ?? "").trim()).filter(Boolean))].slice(0, 3);
+    return [...new Set(values.map((tag) => String(tag ?? "").trim()).filter(Boolean))].slice(0, 6);
   }
   const tagColorPalette = ["#e15b43", "#45b878", "#5d8fe8", "#d9a52e", "#ad68d1", "#35afc2"];
   function autoTagColor(tag) { let hash = 0; [...String(tag || "")].forEach((character) => { hash = (hash * 31 + character.codePointAt(0)) >>> 0; }); return tagColorPalette[hash % tagColorPalette.length]; }
