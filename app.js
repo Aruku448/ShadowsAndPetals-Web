@@ -2,6 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "ashfall-home-config-v2";
+  const EDITOR_WIDTH_KEY = "ashfall-editor-width";
+  const EDITOR_LOCK_KEY = "ashfall-editor-content-locked";
   const DEFAULT_CONFIG_URL = "./config/ashfall-home-config.json";
   const isLocalDev = location.protocol === "file:" || ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(location.hostname);
   const MAX_HISTORY = 40;
@@ -63,6 +65,7 @@
         parentId: null,
         slug: "2026-teacon",
         tags: ["展会"],
+        tagColors: {},
         navLabel: "2026 TeaCon展会",
         eyebrow: "2026TeaCon",
         title: "2026 TeaCon 展会\n织影落花 的 初次见面",
@@ -76,6 +79,8 @@
         midiData: "",
         midiName: "",
         midiTrack: null,
+        template: "editorial-v2",
+        templateVersion: 2,
       },
     ],
     heroImage: "assets/hero-ashfall.png",
@@ -116,6 +121,10 @@
     const values = Array.isArray(value) ? value : String(value || "").split(/[,，、\n]/);
     return [...new Set(values.map((tag) => String(tag ?? "").trim()).filter(Boolean))].slice(0, 3);
   }
+  const tagColorPalette = ["#e15b43", "#45b878", "#5d8fe8", "#d9a52e", "#ad68d1", "#35afc2"];
+  function autoTagColor(tag) { let hash = 0; [...String(tag || "")].forEach((character) => { hash = (hash * 31 + character.codePointAt(0)) >>> 0; }); return tagColorPalette[hash % tagColorPalette.length]; }
+  function pageTagColor(page, tag) { const custom = page.tagColors?.[tag]; return /^#[0-9a-f]{6}$/i.test(custom || "") ? custom : autoTagColor(tag); }
+  function categoryTagColor(tag) { const page = state?.pages?.find((item) => (item.tags || []).includes(tag)); return page ? pageTagColor(page, tag) : autoTagColor(tag); }
 
   function mergeConfig(input = {}) {
     const merged = { ...clone(defaults), ...input };
@@ -184,6 +193,9 @@
   const initialPageSlug = new URLSearchParams(location.search).get("page");
   let viewPageId = initialPageSlug ? state.pages.find((page) => page.slug === initialPageSlug)?.id || "missing" : null;
   let activePageId = viewPageId && viewPageId !== "missing" ? viewPageId : state.pages[0]?.id || null;
+  let pageListQuery = "";
+  let pageListStatus = "all";
+  let pageListSort = "order";
   const collapsedPageIds = new Set();
 
   function showToast(message) {
@@ -349,8 +361,10 @@
     const currentPage = Math.max(1, Number(params.get("page")) || 1);
     const category = params.get("tag") || "";
     const query = params.get("q") || "";
-    const allPages = state.pages.filter((page) => (!category || (page.tags || []).includes(category)) && (!query || normalizeSearchText(searchPageText(page)).includes(normalizeSearchText(query))));
-    const categories = [...new Set(state.pages.flatMap((page) => page.tags || []))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    const hasAssignedTag = (page) => (page.tags || []).some((tag) => String(tag).trim() && tag !== "未分类");
+    const directorySource = query ? state.pages : state.pages.filter(hasAssignedTag);
+    const allPages = directorySource.filter((page) => (!category || (page.tags || []).includes(category)) && (!query || normalizeSearchText(searchPageText(page)).includes(normalizeSearchText(query))));
+    const categories = [...new Set(state.pages.flatMap((page) => page.tags || []).filter((tag) => tag !== "未分类"))].sort((a, b) => a.localeCompare(b, "zh-CN"));
     const pageSize = 6;
     const totalPages = Math.max(1, Math.ceil(allPages.length / pageSize));
     const safePage = Math.min(currentPage, totalPages);
@@ -362,7 +376,7 @@
     }
     const wallImages = directoryHeroImages.length ? directoryHeroImages : ["assets/hero-ashfall.png"];
     directory.hidden = false;
-    directory.innerHTML = `<section class="directory-hero"><div class="section-tag"><span>07</span><p>文章 / Archive</p></div><div><h1>织影落花集<br /><br /><br /></h1><p>通过标签浏览文章。文章之间彼此独立，不再受页面层级限制。</p></div></section><section class="directory-toolbar"><div class="directory-toolbar-controls"><form class="directory-search" data-directory-search-form><label for="directory-search-input">搜索文章</label><div><i data-lucide="search" aria-hidden="true"></i><input id="directory-search-input" type="search" data-directory-search value="${escapeHTML(query)}" placeholder="标题、摘要或正文" /><button class="icon-button" type="submit" aria-label="搜索文章" data-tooltip="搜索"><i data-lucide="arrow-right"></i></button></div></form><div class="directory-filter"><span class="directory-filter-title">按标签筛选</span><button class="directory-filter-trigger" type="button" data-directory-category-trigger aria-haspopup="listbox" aria-expanded="false"><span data-directory-category-label>${escapeHTML(category || "全部文章")}</span><i data-lucide="chevron-down" aria-hidden="true"></i></button><div class="page-outline-panel directory-filter-menu" data-directory-category-menu aria-label="按标签筛选" hidden><div class="outline-header"><span>按标签筛选</span><button class="icon-button outline-close" type="button" data-directory-category-close aria-label="关闭筛选"><i data-lucide="x" aria-hidden="true"></i></button></div><nav>${["", ...categories].map((item) => `<a href="#" class="outline-level-3${item === category ? " is-active" : ""}" data-category-value="${escapeHTML(item)}">${item ? escapeHTML(item) : "全部文章"}</a>`).join("")}</nav></div></div></div><p>${allPages.length} 篇文章</p></section><section class="directory-grid">${items.map((page, index) => `<a class="directory-card${index === 0 && safePage === 1 ? " directory-card-featured" : ""}" href="${pageUrl(page.slug, `${location.pathname}${location.search}`)}"><div class="directory-card-image story-media"><img src="${escapeHTML(page.heroImage)}" alt="" loading="lazy" decoding="async" data-directory-card-image /></div><div class="directory-card-content"><div class="directory-card-tags">${(page.tags || []).map((tag) => `<span>${escapeHTML(tag)}</span>`).join("")}</div><h2>${escapeHTML(page.title || "未命名页面").replace(/\n/g, "<br />")}</h2><p>${escapeHTML(page.summary || "暂无摘要")}</p><i data-lucide="arrow-up-right"></i></div></a>`).join("")}</section><nav class="directory-pagination" aria-label="文章分页">${Array.from({ length: totalPages }, (_, index) => `<a href="${pageDirectoryUrl(index + 1, category, query)}"${index + 1 === safePage ? " aria-current=\"page\"" : ""}>${String(index + 1).padStart(2, "0")}</a>`).join("")}</nav>`;
+    directory.innerHTML = `<section class="directory-hero"><div class="section-tag"><span>07</span><p>文章 / Archive</p></div><div><h1>织影落花集<br /><br /><br /></h1><p>通过标签浏览文章。文章之间彼此独立，不再受页面层级限制。</p></div></section><section class="directory-toolbar"><div class="directory-toolbar-controls"><form class="directory-search" data-directory-search-form><label for="directory-search-input">搜索文章</label><div><i data-lucide="search" aria-hidden="true"></i><input id="directory-search-input" type="search" data-directory-search value="${escapeHTML(query)}" placeholder="标题、摘要或正文" /><button class="icon-button" type="submit" aria-label="搜索文章" data-tooltip="搜索"><i data-lucide="arrow-right"></i></button></div></form><div class="directory-filter"><span class="directory-filter-title">按标签筛选</span><button class="directory-filter-trigger" type="button" data-directory-category-trigger aria-haspopup="listbox" aria-expanded="false"><span data-directory-category-label>${escapeHTML(category || "全部文章")}</span><i data-lucide="chevron-down" aria-hidden="true"></i></button><div class="page-outline-panel directory-filter-menu" data-directory-category-menu aria-label="按标签筛选" hidden><div class="outline-header"><span>按标签筛选</span><button class="icon-button outline-close" type="button" data-directory-category-close aria-label="关闭筛选"><i data-lucide="x" aria-hidden="true"></i></button></div><nav>${["", ...categories].map((item) => `<a href="#" class="outline-level-3${item === category ? " is-active" : ""}" style="--tag-color:${categoryTagColor(item)}" data-category-value="${escapeHTML(item)}">${item ? escapeHTML(item) : "全部文章"}</a>`).join("")}</nav></div></div><button type="button" class="directory-special-tag${category === "织影落花" ? " is-active" : ""}" style="--tag-color:${categoryTagColor("织影落花")}" data-directory-special-tag="织影落花"><span class="directory-special-logo" aria-hidden="true"></span>织影落花</button></div><p>${allPages.length} 篇文章</p></section><section class="directory-grid">${items.map((page, index) => `<a class="directory-card${index === 0 && safePage === 1 ? " directory-card-featured" : ""}${(page.tags || []).includes("织影落花") ? " directory-card-special" : ""}" href="${pageUrl(page.slug, `${location.pathname}${location.search}`)}"><div class="directory-card-image story-media"><img src="${escapeHTML(page.heroImage)}" alt="" loading="lazy" decoding="async" data-directory-card-image /></div><div class="directory-card-content"><div class="directory-card-tags">${(page.tags || []).map((tag) => `<span style="--tag-color:${pageTagColor(page, tag)}">${escapeHTML(tag)}</span>`).join("")}</div><h2>${escapeHTML(page.title || "未命名页面").replace(/\n/g, "<br />")}</h2><p>${escapeHTML(page.summary || "暂无摘要")}</p>${(page.tags || []).includes("织影落花") ? `<img class="directory-card-logo" src="assets/织影落花.svg" alt="织影落花 Logo" aria-hidden="true" />` : `<i data-lucide="arrow-up-right"></i>`}</div></a>`).join("")}</section><nav class="directory-pagination" aria-label="文章分页">${Array.from({ length: totalPages }, (_, index) => `<a href="${pageDirectoryUrl(index + 1, category, query)}"${index + 1 === safePage ? " aria-current=\"page\"" : ""}>${String(index + 1).padStart(2, "0")}</a>`).join("")}</nav>`;
     const hero = directory.querySelector(".directory-hero");
     if (hero) {
       hero.classList.add("directory-hero-cover");
@@ -404,7 +418,8 @@
     if (image.complete && image.naturalWidth) reveal();
   }
 
-  function midiNoteToAbc(midi) {
+  function midiNoteToAbc(midi, transpose = 0) {
+    midi = Math.max(0, Math.min(127, Number(midi) + Number(transpose || 0)));
     const names = ["C", "^C", "D", "^D", "E", "F", "^F", "G", "^G", "A", "^A", "B"];
     const octave = Math.floor(midi / 12) - 1;
     let note = names[midi % 12];
@@ -431,6 +446,19 @@
   function midiTrackEntries(data) {
     const midi = parseMidi(data);
     return midi.tracks.map((track, index) => ({ index, track })).filter(({ track }) => track.notes.length);
+  }
+
+  function midiAutoTranspose(data, trackIndex = null) {
+    const entries = midiTrackEntries(data);
+    const notes = (trackIndex == null ? entries.flatMap(({ track }) => track.notes) : entries.find(({ index }) => index === Number(trackIndex))?.track.notes || []).map((note) => Number(note.midi)).filter(Number.isFinite);
+    if (!notes.length) return 0;
+    const min = Math.min(...notes);
+    const max = Math.max(...notes);
+    const center = (min + max) / 2;
+    const centered = Math.round((60 - center) / 12) * 12;
+    const minShift = Math.ceil((36 - min) / 12) * 12;
+    const maxShift = Math.floor((84 - max) / 12) * 12;
+    return minShift <= maxShift ? Math.max(minShift, Math.min(maxShift, centered)) : centered;
   }
 
   const midiInstrumentNames = { clarinet: "单簧管", basson: "巴松管", bassoon: "巴松管", piano: "钢琴", flute: "长笛", violin: "小提琴", cello: "大提琴", tuba: "大号", horn: "圆号", trombone: "长号", oboe: "双簧管" };
@@ -489,7 +517,7 @@
     return grouped;
   }
 
-  function midiToAbc(data, name = "MIDI", selectedTrack = null, noteRange = null, clef = "treble") {
+  function midiToAbc(data, name = "MIDI", selectedTrack = null, noteRange = null, clef = "treble", transpose = 0) {
     const midi = parseMidi(data);
     const entries = midi.tracks.map((track, index) => ({ index, track })).filter(({ track }) => track.notes.length);
     const selected = entries.find(({ index }) => index === Number(selectedTrack)) || entries[0];
@@ -497,7 +525,7 @@
     const notes = [...selected.track.notes].filter((note) => !noteRange || noteRange(note.midi)).sort((a, b) => a.ticks - b.ticks || b.midi - a.midi).slice(0, 4000);
     const unit = Math.max(1, midi.header.ppq / 4);
     const grouped = groupMidiNotes(notes, unit);
-    const events = [...grouped.entries()].map(([start, values], index, all) => ({ start: Number(start), notes: [...new Set(values.map((value) => value.midi))].sort((a, b) => a - b).map(midiNoteToAbc), arpeggio: false, duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (all[index + 1] ? Number(all[index + 1][0]) : Infinity) - Number(start))) }));
+    const events = [...grouped.entries()].map(([start, values], index, all) => ({ start: Number(start), notes: [...new Set(values.map((value) => value.midi))].sort((a, b) => a - b).map((midi) => midiNoteToAbc(midi, transpose)), arpeggio: false, duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (all[index + 1] ? Number(all[index + 1][0]) : Infinity) - Number(start))) }));
     const tokens = []; let cursor = 0; let barUnits = 0;
     const readableDurations = [16, 12, 8, 6, 4, 3, 2, 1];
     const append = (note, length) => {
@@ -516,7 +544,7 @@
     return `X:1\nM:4/4\nL:1/16\nK:C clef=${clef}\n${tokens.join(" ")}`;
   }
 
-  function midiToGrandStaffAbc(data, name, selectedTrack, splitPoint) {
+  function midiToGrandStaffAbc(data, name, selectedTrack, splitPoint, transpose = 0) {
     const midi = parseMidi(data);
     const selected = midi.tracks[selectedTrack];
     if (!selected?.notes.length) throw new Error("midi-empty");
@@ -524,7 +552,7 @@
     const makeVoice = (range) => {
       const notes = selected.notes.filter((note) => range(note.midi)).sort((a, b) => a.ticks - b.ticks || b.midi - a.midi);
       const grouped = groupMidiNotes(notes, unit, 48);
-      const entries = [...grouped.entries()]; const events = entries.map(([start, values], index) => ({ start: Number(start), notes: [...new Set(values.map((value) => value.midi))].sort((a, b) => a - b).map(midiNoteToAbc), arpeggio: values.length >= 2 && ((Number(start) < 64 && Math.max(...values.map((value) => value.ticks)) - Math.min(...values.map((value) => value.ticks)) <= unit * 2) || (values.length >= 3 && Math.max(...values.map((value) => value.midi)) - Math.min(...values.map((value) => value.midi)) >= 12 && Math.max(...values.map((value) => value.ticks)) - Math.min(...values.map((value) => value.ticks)) <= unit * 2 && Math.max(...values.map((value) => value.ticks)) > Math.min(...values.map((value) => value.ticks)))),duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (entries[index + 1] ? Number(entries[index + 1][0]) : Infinity) - Number(start))) }));
+      const entries = [...grouped.entries()]; const events = entries.map(([start, values], index) => ({ start: Number(start), notes: [...new Set(values.map((value) => value.midi))].sort((a, b) => a - b).map((midi) => midiNoteToAbc(midi, transpose)), arpeggio: values.length >= 2 && ((Number(start) < 64 && Math.max(...values.map((value) => value.ticks)) - Math.min(...values.map((value) => value.ticks)) <= unit * 2) || (values.length >= 3 && Math.max(...values.map((value) => value.midi)) - Math.min(...values.map((value) => value.midi)) >= 12 && Math.max(...values.map((value) => value.ticks)) - Math.min(...values.map((value) => value.ticks)) <= unit * 2 && Math.max(...values.map((value) => value.ticks)) > Math.min(...values.map((value) => value.ticks)))),duration: Math.max(1, Math.min(Math.max(...values.map((value) => value.duration)), (entries[index + 1] ? Number(entries[index + 1][0]) : Infinity) - Number(start))) }));
       const tokens = []; const readable = [16, 12, 8, 6, 4, 3, 2, 1]; let cursor = 0; let bar = 0;
       const append = (note, length) => { let remaining = length; while (remaining > 0) { const amount = readable.find((value) => value <= Math.min(remaining, 16 - bar)) || 1; remaining -= amount; tokens.push(`${note}${amount > 1 ? amount : ""}${note !== "z" && remaining > 0 ? "-" : ""}`); bar += amount; if (bar === 16) { tokens.push("|"); bar = 0; } } };
       events.forEach((event) => { if (event.start > cursor) append("z", event.start - cursor); const note = event.notes.length > 1 ? `${event.arpeggio ? "!arpeggio!" : ""}[${event.notes.join("")}]` : event.notes[0]; append(note, event.duration); cursor = Math.max(cursor, event.start + event.duration); });
@@ -536,6 +564,7 @@
   function renderMidiStaff(staff) {
     if (staff.dataset.rendered === "true") return;
     const { midiData, midiName, trackIndex, piano, splitPoint, clef } = staff.dataset;
+    const transpose = Number(staff.dataset.transpose || 0);
     const score = staff.querySelector(".midi-score");
     if (!score) return;
     staff.classList.add("is-rendering");
@@ -544,7 +573,7 @@
       const data = dataUrlToMidiBytes(midiData);
       const availableWidth = document.querySelector("[data-page-markdown]")?.clientWidth || 1140;
       const staffwidth = Math.max(520, Math.min(1100, availableWidth - 40));
-      const abc = piano === "true" ? midiToGrandStaffAbc(data, midiName, Number(trackIndex), Number(splitPoint)) : midiToAbc(data, midiName, Number(trackIndex), null, clef || "treble");
+      const abc = piano === "true" ? midiToGrandStaffAbc(data, midiName, Number(trackIndex), Number(splitPoint) + transpose, transpose) : midiToAbc(data, midiName, Number(trackIndex), null, clef || "treble", transpose);
       window.ABCJS.renderAbc(score, abc, { responsive: "resize", add_classes: true, staffwidth, wrap: { preferredMeasuresPerLine: 4, minSpacing: 1.5, minSpacingLimit: 1.1 } });
       staff.dataset.rendered = "true";
       requestAnimationFrame(() => { staff.classList.remove("is-rendering"); staff.classList.add("is-expanded"); });
@@ -601,6 +630,7 @@
           staff.dataset.midiData = page.midiData;
           staff.dataset.midiName = page.midiName || "MIDI";
           staff.dataset.trackIndex = entry.index;
+          staff.dataset.transpose = midiAutoTranspose(data, entry.index);
           staff.dataset.piano = "true";
           staff.dataset.splitPoint = splitPoint;
           group.append(staff);
@@ -616,6 +646,7 @@
           staff.dataset.midiData = page.midiData;
           staff.dataset.midiName = page.midiName || "MIDI";
           staff.dataset.trackIndex = entry.index;
+          staff.dataset.transpose = midiAutoTranspose(data, entry.index);
           staff.dataset.clef = staffEntry.clef;
           group.append(staff);
           if (trackPosition === 0) renderMidiStaff(staff);
@@ -1084,6 +1115,7 @@
     const outlineHeaderToggle = $("[data-page-outline-header-toggle]");
     if (outlineHeaderToggle) outlineHeaderToggle.hidden = !viewPageId || !page;
     document.body.classList.toggle("is-subpage", Boolean(viewPageId));
+    view?.classList.toggle("subpage-template-v2", Boolean(viewPageId && page?.template === "editorial-v2"));
     if (!viewPageId) {
       homeSections.forEach((section) => { section.hidden = false; });
       view.hidden = true;
@@ -1397,15 +1429,25 @@
   }
 
   function pageTreeRows() {
-    return state.pages.map((page) => ({ page, depth: 0, hasChildren: false }));
+    const query = pageListQuery.toLocaleLowerCase();
+    const rows = state.pages.filter((page) => {
+      const matchesStatus = pageListStatus === "all" || pageListStatus === (page.published ? "published" : "draft");
+      const haystack = [page.navLabel, page.title, page.slug, page.eyebrow, ...(page.tags || [])].filter(Boolean).join(" ").toLocaleLowerCase();
+      return matchesStatus && (!query || haystack.includes(query));
+    });
+    if (pageListSort === "title") rows.sort((a, b) => String(a.navLabel || a.title).localeCompare(String(b.navLabel || b.title), "zh-CN"));
+    if (pageListSort === "status") rows.sort((a, b) => Number(b.published) - Number(a.published));
+    return rows.map((page) => ({ page, depth: 0, hasChildren: false }));
   }
 
   function renderPageList() {
     const list = $("[data-page-list]"); if (!list) return;
-    list.innerHTML = pageTreeRows().map(({ page }) => {
+    const rows = pageTreeRows();
+    list.innerHTML = rows.length ? rows.map(({ page }) => {
       const index = state.pages.indexOf(page);
       return `<div class="page-tree-node" role="treeitem" aria-level="1"><button type="button" class="page-tree-toggle" aria-hidden="true" tabindex="-1"></button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}${(page.tags || []).length ? ` · ${(page.tags || []).map(escapeHTML).join(" · ")}` : ""}</small></span></button></div>`;
-    }).join("");
+    }).join("") : '<p class="page-list-empty">没有匹配的文章</p>';
+    const count = $("[data-page-count]"); if (count) count.textContent = `${rows.length} / ${state.pages.length}`;
   }
 
   function renderHomeLinkControls(page) {
@@ -1485,6 +1527,7 @@
     const midiStatus = $(`[data-page-midi-status]`); if (midiStatus) midiStatus.textContent = page.midiName ? `当前文件：${page.midiName}` : "尚未上传 MIDI 文件";
     const midiRemove = $(".midi-remove-button"); if (midiRemove) midiRemove.disabled = !page.midiData;
     $$('[data-page-tag]', inspector).forEach((input) => { if (document.activeElement !== input) input.value = page.tags?.[Number(input.dataset.pageTag)] || ""; });
+    $$('[data-page-tag-color]', inspector).forEach((input) => { const tag = page.tags?.[Number(input.dataset.pageTagColor)]; if (document.activeElement !== input) input.value = pageTagColor(page, tag); });
     const open = $(".page-open"); if (open) open.href = pageUrl(page.slug);
     renderHomeLinkControls(page);
   }
@@ -1508,10 +1551,53 @@
   function updateHistoryButtons() { $(".undo-button").disabled = !past.length; $(".redo-button").disabled = !future.length; $(".undo-button").style.opacity = past.length ? "1" : ".3"; $(".redo-button").style.opacity = future.length ? "1" : ".3"; }
   function applySetting(input) { state[input.dataset.setting] = input.type === "checkbox" ? input.checked : input.value; render({ sync: false }); syncControls(); saveState(); }
 
+  const editorWidthInput = $("[data-editor-width]");
+  function applyEditorWidth(value) {
+    const width = Math.max(360, Math.min(1520, Number(value) || 480));
+    document.documentElement.style.setProperty("--editor-width", `${width}px`);
+    if (editorWidthInput) editorWidthInput.value = width;
+    const output = $("[data-editor-width-output]");
+    if (output) output.textContent = `${width}px`;
+  }
+  if (editorWidthInput) {
+    let savedWidth = 480;
+    try { savedWidth = Number(localStorage.getItem(EDITOR_WIDTH_KEY)) || savedWidth; } catch {}
+    applyEditorWidth(savedWidth);
+    editorWidthInput.addEventListener("input", (event) => applyEditorWidth(event.target.value));
+    editorWidthInput.addEventListener("change", (event) => { applyEditorWidth(event.target.value); try { localStorage.setItem(EDITOR_WIDTH_KEY, editorWidthInput.value); } catch {} });
+  }
+  let editorContentLocked = false;
+  try { editorContentLocked = localStorage.getItem(EDITOR_LOCK_KEY) === "1"; } catch {}
+  function syncEditorLock() {
+    const button = $(".editor-lock-toggle");
+    document.body.classList.toggle("editor-content-locked", editorContentLocked);
+    $$('[data-panel]').forEach((panel) => panel.querySelectorAll("input, textarea, select, button, a").forEach((control) => {
+      if (control.classList.contains("editor-lock-toggle") || control.classList.contains("editor-close")) return;
+      control.disabled = editorContentLocked;
+      if (editorContentLocked && control.tagName === "A") control.setAttribute("aria-disabled", "true");
+      else control.removeAttribute("aria-disabled");
+    }));
+    if (!button) return;
+    button.setAttribute("aria-pressed", String(editorContentLocked));
+    button.setAttribute("aria-label", editorContentLocked ? "解锁内容编辑" : "锁定内容编辑");
+    button.dataset.tooltip = editorContentLocked ? "解锁内容编辑" : "锁定内容编辑";
+    button.innerHTML = `<i data-lucide="${editorContentLocked ? "lock" : "unlock"}"></i>`;
+    if (window.lucide) window.lucide.createIcons();
+  }
+  $(".editor-lock-toggle")?.addEventListener("click", () => {
+    editorContentLocked = !editorContentLocked;
+    try { localStorage.setItem(EDITOR_LOCK_KEY, editorContentLocked ? "1" : "0"); } catch {}
+    syncEditorLock();
+    showToast(editorContentLocked ? "内容编辑已锁定" : "内容编辑已解锁");
+  });
+  syncEditorLock();
   $$('[data-setting]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => applySetting(input)); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
   $$('[data-collection-select]').forEach((select) => select.addEventListener("change", () => { activeCollection[select.dataset.collectionSelect] = Number(select.value); syncControls(); }));
   $$('[data-collection]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => { state[input.dataset.collection][activeCollection[input.dataset.collection]][input.dataset.field] = input.value; render({ sync: false }); saveState(); }); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
 
+  $("[data-page-search]")?.addEventListener("input", (event) => { pageListQuery = event.target.value.trim(); renderPageList(); });
+  $("[data-page-status]")?.addEventListener("change", (event) => { pageListStatus = event.target.value; renderPageList(); });
+  $("[data-page-sort]")?.addEventListener("change", (event) => { pageListSort = event.target.value; renderPageList(); });
   $("[data-page-list]")?.addEventListener("click", (event) => { const toggle = event.target.closest("[data-page-toggle]"); if (toggle) { const pageId = toggle.dataset.pageToggle; if (collapsedPageIds.has(pageId)) collapsedPageIds.delete(pageId); else collapsedPageIds.add(pageId); renderPageList(); return; } const button = event.target.closest("[data-page-select]"); if (!button) return; previewPage(button.dataset.pageSelect); });
   $$('[data-page-field], [data-page-tag]').forEach((input) => {
     input.addEventListener("focus", () => { interactionStart = clone(state); });
@@ -1530,6 +1616,31 @@
     });
     input.addEventListener("change", () => { const page = selectedPage(); if (page && input.dataset.pageField === "slug") { page.slug = uniqueSlug(input.value, page.id); input.value = page.slug; if (viewPageId === page.id) history.replaceState(null, "", pageUrl(page.slug)); render({ sync: false }); renderPageList(); saveState(); } remember(interactionStart); interactionStart = null; });
   });
+  $$('[data-page-tag-color]').forEach((input) => {
+    input.addEventListener("focus", () => { interactionStart = clone(state); });
+    input.addEventListener("input", () => {
+      const page = selectedPage();
+      const tag = page?.tags?.[Number(input.dataset.pageTagColor)];
+      if (!page || !tag) return;
+      page.tagColors = { ...(page.tagColors || {}), [tag]: input.value };
+      render({ sync: false }); saveState();
+    });
+    input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; });
+  });
+  $$('[data-page-tag-roll]').forEach((button) => button.addEventListener("click", () => {
+    const page = selectedPage();
+    const index = Number(button.dataset.pageTagRoll);
+    const tag = page?.tags?.[index];
+    if (!page || !tag) { showToast("请先填写标签名称"); return; }
+    const current = pageTagColor(page, tag);
+    const currentIndex = tagColorPalette.indexOf(current);
+    const next = tagColorPalette[(currentIndex + 1 + tagColorPalette.length) % tagColorPalette.length];
+    page.tagColors = { ...(page.tagColors || {}), [tag]: next };
+    render({ sync: false });
+    syncPageControls();
+    saveState();
+    showToast(`已推荐标签颜色：${next}`);
+  }));
   function markdownFileName(page) { const base = String(page.slug || page.title || "page").replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "page"; return `${base}.md`; }
   $(`[data-page-midi]`)?.addEventListener("change", async (event) => {
     const input = event.target; const file = input.files?.[0]; const page = selectedPage();
@@ -1731,6 +1842,17 @@
       }
       return;
     }
+    const specialTag = event.target.closest("[data-directory-special-tag]");
+    if (specialTag) {
+      event.preventDefault();
+      const currentParams = new URLSearchParams(location.search);
+      const value = specialTag.dataset.directorySpecialTag;
+      const nextTag = currentParams.get("tag") === value ? "" : value;
+      const url = new URL(pageDirectoryUrl(1, nextTag, currentParams.get("q") || ""), location.href);
+      history.pushState(null, "", `${url.pathname}${url.search}`);
+      render({ animate: false });
+      return;
+    }
     const filterClose = event.target.closest("[data-directory-category-close]");
     if (filterClose) { event.preventDefault(); closeFilterMenu(); return; }
     const midiAll = event.target.closest("[data-midi-render-all]");
@@ -1842,6 +1964,21 @@
   function searchPageText(page) { return [page.title, page.summary, page.body].filter(Boolean).join(" "); }
   function searchExcerpt(sourceValue, query) { const source = String(sourceValue || "").normalize("NFKC").replace(/[#>*_`~\[\]()!-]/g, " ").replace(/\s+/g, " ").trim(); const normalizedQuery = normalizeSearchText(query); const index = source.toLocaleLowerCase().indexOf(normalizedQuery); if (index < 0) return source.slice(0, 120); return `${index > 36 ? "..." : ""}${source.slice(Math.max(0, index - 36), index + 96)}${source.length > index + 96 ? "..." : ""}`; }
   function searchMarkdownExcerpt(page, query) { return searchExcerpt(page.body || page.summary, query); }
+  function syncThemeControls() {
+    const dark = document.documentElement.classList.contains("dark-mode");
+    $$(".theme-toggle").forEach((button) => {
+      button.setAttribute("aria-label", dark ? "切换到日间模式" : "切换到黑夜模式");
+      button.dataset.tooltip = dark ? "日间模式" : "黑夜模式";
+      button.innerHTML = `<i data-lucide="${dark ? "sun" : "moon"}"></i>`;
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+  $$(".theme-toggle").forEach((button) => button.addEventListener("click", () => {
+    const dark = document.documentElement.classList.toggle("dark-mode");
+    try { localStorage.setItem("ashfall-theme", dark ? "dark" : "light"); } catch {}
+    syncThemeControls();
+  }));
+  syncThemeControls();
   function renderSearchResults(query) { const status = $(".search-result"); const results = $(".search-results"); if (!status || !results) return; if (!query) { status.textContent = "请输入关键词"; results.innerHTML = ""; return; } const normalizedQuery = normalizeSearchText(query).trim(); const hits = state.pages.filter((page) => normalizeSearchText(searchPageText(page)).includes(normalizedQuery)); status.textContent = hits.length ? `找到 ${hits.length} 个子页` : "没有找到相关子页"; results.innerHTML = hits.map((page) => `<article class="search-result-item" role="listitem"><p class="search-result-eyebrow">子页 · ${escapeHTML(page.eyebrow || page.navLabel || "Markdown")}</p><h2>${escapeHTML(String(page.title || "未命名页面").replace(/\n/g, " "))}</h2><p class="search-result-summary">${escapeHTML(page.summary || "暂无简述")}</p><p class="search-result-markdown"><span>Markdown</span> ${escapeHTML(searchMarkdownExcerpt(page, query))}</p><a href="${pageUrl(page.slug)}" class="search-result-link">进入子页 <i data-lucide="arrow-up-right"></i></a></article>`).join(""); if (window.lucide) window.lucide.createIcons(); }
   $(".search-button")?.addEventListener("click", () => { if (new URLSearchParams(location.search).get("view") === "pages" && document.body.classList.contains("is-directory")) { scrollDirectoryToHeroBottom(); $("[data-directory-search]")?.focus(); return; } $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); renderSearchResults($("#site-search").value.trim().toLowerCase()); }); $("#site-search")?.addEventListener("input", (event) => renderSearchResults(event.target.value.trim().toLowerCase()));
   $(".menu-button")?.addEventListener("click", () => { $(".menu-layer").classList.add("is-open"); $(".menu-layer").setAttribute("aria-hidden", "false"); }); $(".menu-close")?.addEventListener("click", () => { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); }); $(".menu-layer")?.addEventListener("click", (event) => { if (event.target.closest("a")) { $(".menu-layer").classList.remove("is-open"); $(".menu-layer").setAttribute("aria-hidden", "true"); } });
