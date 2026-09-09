@@ -1097,6 +1097,7 @@
   function renderSubpage({ animate = true } = {}) {
     const directory = $("[data-page-directory]");
     const view = $("[data-subpage-view]");
+    document.body.querySelector("[data-page-outline-panel]")?.remove();
     const params = new URLSearchParams(location.search);
     const homeSections = $("main") ? $$("main > section") : [];
     if (params.get("view") === "pages") {
@@ -1167,6 +1168,8 @@
         <p>继续探索</p>
         ${next ? `<a href="${pageUrl(next.slug, params.get("from") || "")}"><span class="subpage-next-meta">${escapeHTML(next.eyebrow)}</span><strong>${escapeHTML(next.title).replace(/\n/g, " ")}</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>` : `<a href="${homeUrl("#download")}" data-home-link="#download"><span class="subpage-next-meta">织影落花</span><strong>返回首页继续探索</strong><span class="double-arrow subpage-next-arrow" data-element-key="page:${escapeHTML(page.id)}:next:arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a>`}
       </section>`;
+    const outlinePanel = view.querySelector("[data-page-outline-panel]");
+    if (outlinePanel) document.body.appendChild(outlinePanel);
     renderPageMarkdown(page);
     closePageOutline();
     if (window.lucide) window.lucide.createIcons();

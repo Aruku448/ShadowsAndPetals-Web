@@ -521,6 +521,7 @@ body.is-subpage .site-footer { border-radius: 0; }
 .subpage-back, .subpage-eyebrow, .subpage-hero h1, .subpage-summary { position: relative; z-index: 3; }
 .subpage-back { position: fixed; z-index: 70; top: 112px; left: 5.3vw; display: inline-flex; align-items: center; gap: 9px; padding: 9px 16px; font-size: 12px; font-weight: 800; border-radius: 999px; animation: header-in 700ms cubic-bezier(.16,.8,.24,1) both; }
 .subpage-view .subpage-hero { position: relative; z-index: 4; }
+body > .page-outline-panel { z-index: 210; }
 .subpage-copy .outline-jump-prepare { --outline-base: #30332e; --outline-a: #e15b43; --outline-b: #d9a52e; --outline-c: #5d8fe8; color: var(--outline-base); background-color: var(--outline-base); background-image: linear-gradient(90deg, var(--outline-base) 0%, var(--outline-base) 30%, var(--outline-c) 40%, var(--outline-b) 50%, var(--outline-a) 60%, var(--outline-base) 70%, var(--outline-base) 100%); background-size: 160% 100%; background-repeat: no-repeat; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: outline-jump-rainbow 600ms linear reverse both; }
 html.dark-mode .subpage-copy .outline-jump-prepare { --outline-base: #e8ebe3; --outline-a: #e15b43; --outline-b: #ddfd5a; --outline-c: #5d8fe8; }
 .subpage-copy .outline-jump-prepare .outline-jump-char { color: #e15b43; -webkit-text-fill-color: #e15b43; animation: outline-char-prepare var(--outline-char-duration, 720ms) cubic-bezier(.37, 0, .63, 1) both; animation-delay: calc(var(--outline-char-index) * 38ms); }
