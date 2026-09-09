@@ -2010,7 +2010,7 @@
       const labels = { auto: "自动主题（07:00–19:00 白天）", light: "手动白天模式", dark: "手动黑夜模式" };
       button.setAttribute("aria-label", `${labels[themeMode]}，点击切换`);
       button.dataset.tooltip = labels[themeMode];
-      button.innerHTML = `<i data-lucide="${dark ? "sun" : "moon"}"></i>`;
+      button.innerHTML = themeMode === "auto" ? '<svg class="theme-auto-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6L18 18M18 6l-1.4 1.4M7.4 16.6L6 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 12V7.5M12 12h3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' : `<i data-lucide="${dark ? "sun" : "moon"}"></i>`;
     });
     if (window.lucide) window.lucide.createIcons();
   }
