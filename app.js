@@ -14,7 +14,8 @@
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const EDITOR_SESSION_KEY = "ashfall-editor-open";
   let editorKeepOpen = false;
-  try { editorKeepOpen = sessionStorage.getItem(EDITOR_SESSION_KEY) === "1"; } catch {}
+  let themeMode = "auto";
+  try { editorKeepOpen = sessionStorage.getItem(EDITOR_SESSION_KEY) === "1"; themeMode = ["auto", "light", "dark"].includes(localStorage.getItem("ashfall-theme-mode")) ? localStorage.getItem("ashfall-theme-mode") : "auto"; } catch {}
 
   const defaults = {
     configVersion: 6,
@@ -1999,20 +2000,21 @@
   function searchPageText(page) { return [page.title, page.summary, page.body].filter(Boolean).join(" "); }
   function searchExcerpt(sourceValue, query) { const source = String(sourceValue || "").normalize("NFKC").replace(/[#>*_`~\[\]()!-]/g, " ").replace(/\s+/g, " ").trim(); const normalizedQuery = normalizeSearchText(query); const index = source.toLocaleLowerCase().indexOf(normalizedQuery); if (index < 0) return source.slice(0, 120); return `${index > 36 ? "..." : ""}${source.slice(Math.max(0, index - 36), index + 96)}${source.length > index + 96 ? "..." : ""}`; }
   function searchMarkdownExcerpt(page, query) { return searchExcerpt(page.body || page.summary, query); }
+  let themeScheduleTimer;
+  function applyScheduledTheme() { if (themeMode !== "auto") return; const hour = new Date().getHours(); const dark = hour < 7 || hour >= 19; document.documentElement.classList.toggle("dark-mode", dark); const themeColor = $("meta[name=theme-color]"); if (themeColor) themeColor.content = dark ? "#101110" : "#f2f0e9"; syncThemeControls(); clearTimeout(themeScheduleTimer); const next = new Date(); next.setMinutes(0, 0, 0); next.setHours(dark ? 7 : 19); if (next <= new Date()) next.setDate(next.getDate() + 1); themeScheduleTimer = window.setTimeout(applyScheduledTheme, Math.max(1000, next.getTime() - Date.now() + 1000)); }
+  function applyThemeMode(mode) { themeMode = mode; clearTimeout(themeScheduleTimer); if (mode === "auto") applyScheduledTheme(); else { const dark = mode === "dark"; document.documentElement.classList.toggle("dark-mode", dark); const themeColor = $("meta[name=theme-color]"); if (themeColor) themeColor.content = dark ? "#101110" : "#f2f0e9"; syncThemeControls(); } try { localStorage.setItem("ashfall-theme-mode", mode); } catch {} }
+
   function syncThemeControls() {
     const dark = document.documentElement.classList.contains("dark-mode");
     $$(".theme-toggle").forEach((button) => {
-      button.setAttribute("aria-label", dark ? "切换到日间模式" : "切换到黑夜模式");
-      button.dataset.tooltip = dark ? "日间模式" : "黑夜模式";
+      const labels = { auto: "自动主题（07:00–19:00 白天）", light: "手动白天模式", dark: "手动黑夜模式" };
+      button.setAttribute("aria-label", `${labels[themeMode]}，点击切换`);
+      button.dataset.tooltip = labels[themeMode];
       button.innerHTML = `<i data-lucide="${dark ? "sun" : "moon"}"></i>`;
     });
     if (window.lucide) window.lucide.createIcons();
   }
-  $$(".theme-toggle").forEach((button) => button.addEventListener("click", () => {
-    const dark = document.documentElement.classList.toggle("dark-mode");
-    try { localStorage.setItem("ashfall-theme", dark ? "dark" : "light"); } catch {}
-    syncThemeControls();
-  }));
+  $$(".theme-toggle").forEach((button) => button.addEventListener("click", () => { const next = { auto: "light", light: "dark", dark: "auto" }[themeMode]; applyThemeMode(next); }));
   syncThemeControls();
   function renderSearchResults(query) { const status = $(".search-result"); const results = $(".search-results"); if (!status || !results) return; if (!query) { status.textContent = "请输入关键词"; results.innerHTML = ""; return; } const normalizedQuery = normalizeSearchText(query).trim(); const hits = state.pages.filter((page) => normalizeSearchText(searchPageText(page)).includes(normalizedQuery)); status.textContent = hits.length ? `找到 ${hits.length} 个子页` : "没有找到相关子页"; results.innerHTML = hits.map((page) => `<article class="search-result-item" role="listitem"><p class="search-result-eyebrow">子页 · ${escapeHTML(page.eyebrow || page.navLabel || "Markdown")}</p><h2>${escapeHTML(String(page.title || "未命名页面").replace(/\n/g, " "))}</h2><p class="search-result-summary">${escapeHTML(page.summary || "暂无简述")}</p><p class="search-result-markdown"><span>Markdown</span> ${escapeHTML(searchMarkdownExcerpt(page, query))}</p><a href="${pageUrl(page.slug)}" class="search-result-link">进入子页 <i data-lucide="arrow-up-right"></i></a></article>`).join(""); if (window.lucide) window.lucide.createIcons(); }
   $(".search-button")?.addEventListener("click", () => { if (new URLSearchParams(location.search).get("view") === "pages" && document.body.classList.contains("is-directory")) { scrollDirectoryToHeroBottom(); $("[data-directory-search]")?.focus(); return; } $(".search-layer").classList.add("is-open"); $(".search-layer").setAttribute("aria-hidden", "false"); setTimeout(() => $("#site-search").focus(), 200); }); $(".search-close")?.addEventListener("click", () => { $(".search-layer").classList.remove("is-open"); $(".search-layer").setAttribute("aria-hidden", "true"); }); $(".search-form")?.addEventListener("submit", (event) => { event.preventDefault(); renderSearchResults($("#site-search").value.trim().toLowerCase()); }); $("#site-search")?.addEventListener("input", (event) => renderSearchResults(event.target.value.trim().toLowerCase()));
@@ -2030,6 +2032,7 @@
   function observeReveals() { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); } }), { threshold: .08 }); $$(".reveal, .reveal-card, .media-reveal").forEach((element) => observer.observe(element)); }
   async function bootstrap() {
     syncViewportMode();
+    applyScheduledTheme();
     if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, theme: "base", securityLevel: "strict", themeVariables: { primaryColor: "#eef0e8", primaryTextColor: "#30332e", primaryBorderColor: "#62665f", lineColor: "#62665f", tertiaryColor: "#f5f4ed" } });
     syncViewedPageFromLocation();
     await loadBundledConfig();

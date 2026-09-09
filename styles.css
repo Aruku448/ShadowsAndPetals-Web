@@ -15,7 +15,8 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; tab-size: 4; font-size: 16px; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; tab-size: 4; font-size: 16px; color-scheme: light; }
+html.dark-mode { color-scheme: dark; }
 body { margin: 0; background: var(--paper); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
 button, input, textarea, select { font: inherit; letter-spacing: 0; }
 button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
@@ -752,6 +753,7 @@ html.dark-mode .subpage-copy .outline-jump-highlight { --outline-base: #e8ebe3; 
   .subpage-view > section { min-height: 0; }
   .subpage-hero { width: 100%; height: max(100svh, 233.333vw); height: max(100dvh, 233.333vw); min-height: max(100svh, 233.333vw); min-height: max(100dvh, 233.333vw); padding: 120px 18px max(50px, calc(env(safe-area-inset-bottom) + 24px)); }
   .subpage-back { top: 92px; left: 18px; }
+  .subpage-back.subpage-back-scrolled { display: none; }
   .subpage-hero h1 { font-size: 56px; }
   .subpage-summary { margin: 26px 0 max(100px, calc(env(safe-area-inset-bottom) + 24px)); font-size: 15px; }
   .subpage-content { display: block; padding: 90px 18px; }

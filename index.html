@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="织影落花 Minecraft Mod 官方展示站" />
     <meta name="theme-color" content="#101110" />
-    <script>document.documentElement.classList.add("js-enabled"); try { if (sessionStorage.getItem("ashfall-loader-seen") === "1") document.documentElement.classList.add("skip-page-loader"); if (localStorage.getItem("ashfall-theme") === "dark") document.documentElement.classList.add("dark-mode"); } catch {}</script>
+    <meta name="color-scheme" content="light dark" />
+    <script>document.documentElement.classList.add("js-enabled"); try { if (sessionStorage.getItem("ashfall-loader-seen") === "1") document.documentElement.classList.add("skip-page-loader"); const mode = localStorage.getItem("ashfall-theme-mode") || "auto"; if (mode === "dark" || (mode === "auto" && (() => { const hour = new Date().getHours(); return hour < 7 || hour >= 19; })())) document.documentElement.classList.add("dark-mode"); } catch {}</script>
     <title>织影落花 — Minecraft Mod</title>
     <link rel="icon" href="assets/favicon.png" type="image/png" />
     <link rel="stylesheet" href="styles.css" />
