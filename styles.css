@@ -1043,6 +1043,14 @@ html.dark-mode .search-layer,
 html.dark-mode .menu-layer { color: #f2f0e9; background: #080a09; }
 html.dark-mode .search-form input { color: #f2f0e9; }
 html.dark-mode .search-form > div { border-bottom-color: #f2f0e9; }
+html.dark-mode .search-result-item h2 { color: #f2f0e9 !important; }
+html.dark-mode .search-result-link svg { color: #4b514c; }
+html.dark-mode .search-result-item .search-result-summary { color: #f2f0e9 !important; }
+html.dark-mode .search-results { scrollbar-color: #8d948a #171b18; scrollbar-width: thin; }
+html.dark-mode .search-results::-webkit-scrollbar { width: 10px; }
+html.dark-mode .search-results::-webkit-scrollbar-track { background: #171b18; border-radius: 999px; }
+html.dark-mode .search-results::-webkit-scrollbar-thumb { background: #8d948a; border: 2px solid #171b18; border-radius: 999px; }
+html.dark-mode .search-results::-webkit-scrollbar-thumb:hover { background: #c5ccc2; }
 html.dark-mode .editor { color: #e8ebe3; background-color: #151815; border-left-color: rgba(232, 235, 227, .18); }
 html.dark-mode .editor-header,
 html.dark-mode .editor-tabs,
@@ -1070,6 +1078,19 @@ html.dark-mode .page-search,
 html.dark-mode .page-search input { color: #e8ebe3; background: #202520; border-color: rgba(232, 235, 227, .24); }
 html.dark-mode .editor .control-hint,
 html.dark-mode .editor .midi-file-status { color: #a4aaa0; }
+html.dark-mode .editor-panel[data-panel="collections"] .control-section { border-color: rgba(232, 235, 227, .18); background: #1b201c; }
+html.dark-mode .editor-panel[data-panel="collections"] .panel-title-row { border-bottom-color: rgba(232, 235, 227, .18); }
+html.dark-mode .editor-panel[data-panel="collections"] .panel-title-row h3 { color: #f2f0e9; }
+html.dark-mode .editor-panel[data-panel="collections"] .compact-actions .icon-button { color: #ddfd5a; }
+html.dark-mode .editor-panel[data-panel="collections"] .tool-button { color: #ddfd5a; border-color: rgba(221, 253, 90, .48); }
+html.dark-mode .news-card-content { color: #f2f0e9; }
+html.dark-mode .news-card h3 { color: #f2f0e9; }
+html.dark-mode .news-meta { color: #b6beb3; }
+html.dark-mode .news-card-content > p { color: #d0d6cd; }
+html.dark-mode .expertise-item { border-color: rgba(232, 235, 227, .24); }
+html.dark-mode .expertise-item h3 { color: #f2f0e9 !important; }
+html.dark-mode .expertise-item p { color: #b8c0b6; }
+html.dark-mode .item-arrow { color: #ddfd5a; border-color: rgba(232, 235, 227, .35); }
 html.dark-mode .editor-content-locked [data-panel] { opacity: .58; }
 .editor-content-locked .editor-lock-toggle { color: var(--ink); background: var(--accent); }
 .editor-content-locked [data-panel] { user-select: none; }

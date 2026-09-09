@@ -157,8 +157,8 @@
     if (merged.kicker === "FORGE 1.20.1 / 生存扩展模组") merged.kicker = "NEOFORGE 1.21.1 / 26.1.2 / 生存扩展模组";
     if (merged.loader === "Forge 1.20.1") merged.loader = "Neoforge 1.21.1 / 26.1.2";
     merged.configVersion = defaults.configVersion;
-    merged.news = defaults.news.map((item, index) => ({ ...item, ...(Array.isArray(input.news) ? input.news[index] : {}) }));
-    merged.expertise = defaults.expertise.map((item, index) => ({ ...item, ...(Array.isArray(input.expertise) ? input.expertise[index] : {}) }));
+    merged.news = Array.isArray(input.news) ? input.news.map((item, index) => ({ ...(defaults.news[index] || {}), ...item })) : clone(defaults.news);
+    merged.expertise = Array.isArray(input.expertise) ? input.expertise.map((item, index) => ({ ...(defaults.expertise[index] || {}), ...item })) : clone(defaults.expertise);
     return merged;
   }
 
@@ -1174,8 +1174,9 @@
 
   function renderNews() {
     const rail = $(".news-rail");
-    rail.innerHTML = state.news.map((item, index) => `<article class="news-card reveal-card" data-news-index="${index}"><div class="news-card-image"><img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async" /><div class="news-card-content"><div class="news-meta"><p>${item.tag}</p><p><span>${String(index + 1).padStart(2, "0")}</span>/16 · ${item.date}</p></div><h3>${item.title}</h3><p>${item.body}</p><a href="#download" class="card-cta">查看更新 <span class="double-arrow"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a></div></div></article>`).join("");
+    rail.innerHTML = state.news.map((item, index) => `<article class="news-card reveal-card" data-news-index="${index}"><div class="news-card-image"><img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async" /><div class="news-card-content"><div class="news-meta"><p>${item.tag}</p><p><span>${String(index + 1).padStart(2, "0")}</span>/${String(state.news.length).padStart(2, "0")} · ${item.date}</p></div><h3>${item.title}</h3><p>${item.body}</p><a href="#download" class="card-cta">查看更新 <span class="double-arrow"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a></div></div></article>`).join("");
     rail.querySelectorAll(".news-card").forEach((card, index) => { card.addEventListener("mouseenter", () => setActiveNews(index)); card.addEventListener("focusin", () => setActiveNews(index)); });
+    $("[data-news-total]").textContent = String(state.news.length).padStart(2, "0");
     if (window.lucide) window.lucide.createIcons();
     observeReveals();
   }
@@ -1799,7 +1800,7 @@
   $(".import-button input").addEventListener("change", async (event) => { try { const previous = clone(state); state = mergeConfig(JSON.parse(await event.target.files[0].text())); remember(previous); render(); saveState(); syncConfigMetaDisplay(); showToast("配置已导入"); } catch { showToast("配置文件格式不正确"); } event.target.value = ""; });
   $(".reset-button").addEventListener("click", () => { const previous = clone(state); state = clone(defaults); remember(previous); render(); saveState(); showToast("已恢复示例内容，可撤销"); });
 
-  function setupRail(selector, prev, next, currentAttr) { const rail = $(selector); const step = () => { const card = rail.firstElementChild; if (!card) return 0; return card.getBoundingClientRect().width + (parseFloat(getComputedStyle(rail).gap) || 0); }; const move = (dir) => rail.scrollBy({ left: dir * step(), behavior: "smooth" }); $(prev).addEventListener("click", () => move(-1)); $(next).addEventListener("click", () => move(1)); rail.addEventListener("scroll", () => { const index = Math.max(0, Math.min(15, Math.round(rail.scrollLeft / step()))); $(currentAttr).textContent = String(index + 1).padStart(2, "0"); setActiveNews(index); }, { passive: true }); let down = false; let startX = 0; let startScroll = 0; rail.addEventListener("pointerdown", (event) => { if (event.target.closest("a, button, input, select, textarea")) return; down = true; startX = event.clientX; startScroll = rail.scrollLeft; rail.setPointerCapture(event.pointerId); rail.classList.add("is-dragging"); }); rail.addEventListener("pointermove", (event) => { if (down) rail.scrollLeft = startScroll - event.clientX + startX; }); ["pointerup", "pointercancel"].forEach((name) => rail.addEventListener(name, () => { down = false; rail.classList.remove("is-dragging"); })); }
+  function setupRail(selector, prev, next, currentAttr) { const rail = $(selector); const step = () => { const card = rail.firstElementChild; if (!card) return 0; return card.getBoundingClientRect().width + (parseFloat(getComputedStyle(rail).gap) || 0); }; const move = (dir) => rail.scrollBy({ left: dir * step(), behavior: "smooth" }); $(prev).addEventListener("click", () => move(-1)); $(next).addEventListener("click", () => move(1)); rail.addEventListener("scroll", () => { const index = Math.max(0, Math.min(Math.max(0, rail.children.length - 1), Math.round(rail.scrollLeft / step()))); $(currentAttr).textContent = String(index + 1).padStart(2, "0"); setActiveNews(index); }, { passive: true }); let down = false; let startX = 0; let startScroll = 0; rail.addEventListener("pointerdown", (event) => { if (event.target.closest("a, button, input, select, textarea")) return; down = true; startX = event.clientX; startScroll = rail.scrollLeft; rail.setPointerCapture(event.pointerId); rail.classList.add("is-dragging"); }); rail.addEventListener("pointermove", (event) => { if (down) rail.scrollLeft = startScroll - event.clientX + startX; }); ["pointerup", "pointercancel"].forEach((name) => rail.addEventListener(name, () => { down = false; rail.classList.remove("is-dragging"); })); }
   setupRail(".news-rail", ".rail-prev", ".rail-next", "[data-news-current]");
 
   document.addEventListener("pointermove", (event) => {
@@ -2023,12 +2024,9 @@
   async function bootstrap() {
     if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, theme: "base", securityLevel: "strict", themeVariables: { primaryColor: "#eef0e8", primaryTextColor: "#30332e", primaryBorderColor: "#62665f", lineColor: "#62665f", tertiaryColor: "#f5f4ed" } });
     syncViewedPageFromLocation();
+    await loadBundledConfig();
+    syncViewedPageFromLocation();
     render();
-    const loadedBundledConfig = await loadBundledConfig();
-    if (loadedBundledConfig) {
-      syncViewedPageFromLocation();
-      render();
-    }
     revealHeroMedia($(".hero-media"));
     if (window.lucide) window.lucide.createIcons();
     syncElementScopes();
