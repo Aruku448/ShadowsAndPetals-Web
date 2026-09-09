@@ -696,6 +696,8 @@ body.is-subpage .site-footer { border-radius: 0; }
 .page-list-item { display: grid; grid-template-columns: 34px 1fr; gap: 9px; align-items: center; min-height: 58px; border: 0; padding: 8px 10px; color: var(--ink); background: #fff; text-align: left; }
 .page-list-item:hover, .page-list-item.is-selected { background: #eef1dc; }
 .page-list-item.is-selected { box-shadow: inset 3px 0 var(--accent); }
+.page-list-item[draggable="true"] { cursor: grab; }
+.page-list-item.is-dragging { opacity: .45; cursor: grabbing; }
 .page-list-item b { color: #8a8d85; font-size: 10px; }
 .page-list-item span { display: grid; min-width: 0; gap: 3px; }
 .page-list-item strong, .page-list-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -962,6 +964,7 @@ html:not(.js-enabled) .page-loader { display: none; }
 html.dark-mode .directory-card-special { border-color: #fff; }
 .directory-card-special:hover,
 html.dark-mode .directory-card-special:hover { border-color: #fff; box-shadow: 0 17px 34px rgba(225, 91, 67, .2); }
+.directory-card-special .directory-card-content > p { max-width: calc(100% - 76px); margin-right: 76px; padding: 8px 12px; border-radius: 12px; background: rgba(255, 255, 255, .58); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .directory-card-logo { position: absolute; right: 17px; bottom: 22px; z-index: 3; width: 84px; height: 84px; object-fit: contain; opacity: .92; filter: brightness(0) saturate(100%) invert(38%) sepia(28%) saturate(1350%) hue-rotate(286deg) brightness(94%) contrast(91%); }
 @keyframes special-tag-flow { to { background-position: -220% 0; } }
 @media (prefers-reduced-motion: reduce) { .directory-card-special::after { animation: none; } }

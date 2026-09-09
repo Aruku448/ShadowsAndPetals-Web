@@ -45,6 +45,7 @@
     trailerVideo: "",
     trailerImage: "assets/news-cavern.png",
     accent: "#DDFD5A",
+    tagColors: {},
     heroShade: 34,
     heroFocus: 52,
     textureGrain: 5,
@@ -123,7 +124,7 @@
   }
   const tagColorPalette = ["#e15b43", "#45b878", "#5d8fe8", "#d9a52e", "#ad68d1", "#35afc2"];
   function autoTagColor(tag) { let hash = 0; [...String(tag || "")].forEach((character) => { hash = (hash * 31 + character.codePointAt(0)) >>> 0; }); return tagColorPalette[hash % tagColorPalette.length]; }
-  function pageTagColor(page, tag) { const custom = page.tagColors?.[tag]; return /^#[0-9a-f]{6}$/i.test(custom || "") ? custom : autoTagColor(tag); }
+  function pageTagColor(page, tag) { const global = state?.tagColors?.[tag]; if (/^#[0-9a-f]{6}$/i.test(global || "")) return global; const custom = page.tagColors?.[tag]; return /^#[0-9a-f]{6}$/i.test(custom || "") ? custom : autoTagColor(tag); }
   function categoryTagColor(tag) { const page = state?.pages?.find((item) => (item.tags || []).includes(tag)); return page ? pageTagColor(page, tag) : autoTagColor(tag); }
 
   function mergeConfig(input = {}) {
@@ -136,6 +137,8 @@
     }
     merged.customElements = Array.isArray(input.customElements) ? input.customElements : [];
     merged.pages = Array.isArray(input.pages) ? input.pages.map((page, index) => ({ ...clone(defaults.pages[0]), ...page, id: page.id || `page-${index + 1}`, tags: normalizePageTags(page.tags ?? page.eyebrow) })) : clone(defaults.pages);
+    merged.tagColors = { ...clone(defaults.tagColors), ...(input.tagColors || {}) };
+    merged.pages.forEach((page) => Object.entries(page.tagColors || {}).forEach(([tag, color]) => { if (!merged.tagColors[tag] && /^#[0-9a-f]{6}$/i.test(color)) merged.tagColors[tag] = color; }));
     // 页面分享必须可用：当前站点配置中的页面统一作为已发布页面处理。
     merged.pages.forEach((page) => { page.parentId = null; page.published = true; });
     merged.homeLinks = Object.fromEntries(Object.entries(input.homeLinks || {}).filter(([, pageId]) => merged.pages.some((page) => page.id === pageId)));
@@ -196,6 +199,7 @@
   let pageListQuery = "";
   let pageListStatus = "all";
   let pageListSort = "order";
+  let draggedPageId = null;
   const collapsedPageIds = new Set();
 
   function showToast(message) {
@@ -1445,7 +1449,7 @@
     const rows = pageTreeRows();
     list.innerHTML = rows.length ? rows.map(({ page }) => {
       const index = state.pages.indexOf(page);
-      return `<div class="page-tree-node" role="treeitem" aria-level="1"><button type="button" class="page-tree-toggle" aria-hidden="true" tabindex="-1"></button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}${(page.tags || []).length ? ` · ${(page.tags || []).map(escapeHTML).join(" · ")}` : ""}</small></span></button></div>`;
+      return `<div class="page-tree-node" role="treeitem" aria-level="1"><button type="button" class="page-tree-toggle" aria-hidden="true" tabindex="-1"></button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" draggable="true" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}${(page.tags || []).length ? ` · ${(page.tags || []).map(escapeHTML).join(" · ")}` : ""}</small></span></button></div>`;
     }).join("") : '<p class="page-list-empty">没有匹配的文章</p>';
     const count = $("[data-page-count]"); if (count) count.textContent = `${rows.length} / ${state.pages.length}`;
   }
@@ -1595,6 +1599,21 @@
   $$('[data-collection-select]').forEach((select) => select.addEventListener("change", () => { activeCollection[select.dataset.collectionSelect] = Number(select.value); syncControls(); }));
   $$('[data-collection]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => { state[input.dataset.collection][activeCollection[input.dataset.collection]][input.dataset.field] = input.value; render({ sync: false }); saveState(); }); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
 
+  $("[data-page-list]")?.addEventListener("dragstart", (event) => {
+    const item = event.target.closest("[data-page-select]"); if (!item) return;
+    draggedPageId = item.dataset.pageSelect; item.classList.add("is-dragging");
+    event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", draggedPageId);
+  });
+  $("[data-page-list]")?.addEventListener("dragend", (event) => { event.target.closest("[data-page-select]")?.classList.remove("is-dragging"); draggedPageId = null; });
+  $("[data-page-list]")?.addEventListener("dragover", (event) => { if (event.target.closest("[data-page-select]")) event.preventDefault(); });
+  $("[data-page-list]")?.addEventListener("drop", (event) => {
+    event.preventDefault(); const target = event.target.closest("[data-page-select]");
+    if (!draggedPageId || !target || draggedPageId === target.dataset.pageSelect) return;
+    const from = state.pages.findIndex((page) => page.id === draggedPageId); const to = state.pages.findIndex((page) => page.id === target.dataset.pageSelect);
+    if (from < 0 || to < 0) return;
+    const previous = clone(state); const [moved] = state.pages.splice(from, 1); state.pages.splice(to, 0, moved);
+    pageListSort = "order"; $("[data-page-sort]").value = "order"; remember(previous); render(); saveState(); showToast("文章顺序已更新");
+  });
   $("[data-page-search]")?.addEventListener("input", (event) => { pageListQuery = event.target.value.trim(); renderPageList(); });
   $("[data-page-status]")?.addEventListener("change", (event) => { pageListStatus = event.target.value; renderPageList(); });
   $("[data-page-sort]")?.addEventListener("change", (event) => { pageListSort = event.target.value; renderPageList(); });
@@ -1622,6 +1641,7 @@
       const page = selectedPage();
       const tag = page?.tags?.[Number(input.dataset.pageTagColor)];
       if (!page || !tag) return;
+      state.tagColors = { ...(state.tagColors || {}), [tag]: input.value };
       page.tagColors = { ...(page.tagColors || {}), [tag]: input.value };
       render({ sync: false }); saveState();
     });
@@ -1635,6 +1655,7 @@
     const current = pageTagColor(page, tag);
     const currentIndex = tagColorPalette.indexOf(current);
     const next = tagColorPalette[(currentIndex + 1 + tagColorPalette.length) % tagColorPalette.length];
+    state.tagColors = { ...(state.tagColors || {}), [tag]: next };
     page.tagColors = { ...(page.tagColors || {}), [tag]: next };
     render({ sync: false });
     syncPageControls();
