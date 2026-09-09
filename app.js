@@ -1426,8 +1426,9 @@
     $("[data-color-output]").textContent = state.accent.toUpperCase();
     $$('[data-range-output]').forEach((output) => { output.textContent = `${state[output.dataset.rangeOutput]}${output.dataset.rangeUnit ?? "%"}`; });
     $$('[data-collection-select]').forEach((select) => {
-      const type = select.dataset.collectionSelect; const collection = state[type]; select.innerHTML = collection.map((item, index) => `<option value="${index}">${String(index + 1).padStart(2, "0")} · ${item.title}</option>`).join(""); select.value = activeCollection[type];
+      const type = select.dataset.collectionSelect; const collection = state[type]; select.innerHTML = collection.map((item, index) => `<option value="${index}">${String(index + 1).padStart(2, "0")} · ${escapeHTML(item.title || "未命名项目")}</option>`).join(""); select.value = activeCollection[type];
     });
+    $$('[data-collection-page]').forEach((select) => { const previous = select.value; select.innerHTML = `<option value="">选择一个子页</option>${state.pages.map((page) => `<option value="${escapeHTML(page.id)}">${escapeHTML(page.navLabel || page.title || "未命名页面")}</option>`).join("")}`; if (state.pages.some((page) => page.id === previous)) select.value = previous; });
     syncCollectionControls("news"); syncCollectionControls("expertise");
     syncPageControls();
   }
@@ -1536,6 +1537,8 @@
     renderHomeLinkControls(page);
   }
 
+  function formatCollectionDate(date = new Date()) { const pad = (value) => String(value).padStart(2, "0"); return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`; }
+
   function syncCollectionControls(type) {
     const item = state[type][activeCollection[type]]; if (!item) return;
     $$(`[data-collection="${type}"]`).forEach((input) => { if (document.activeElement !== input) input.value = item[input.dataset.field] ?? ""; });
@@ -1598,6 +1601,10 @@
   $$('[data-setting]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => applySetting(input)); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
   $$('[data-collection-select]').forEach((select) => select.addEventListener("change", () => { activeCollection[select.dataset.collectionSelect] = Number(select.value); syncControls(); }));
   $$('[data-collection]').forEach((input) => { input.addEventListener("focus", () => { interactionStart = clone(state); }); input.addEventListener("input", () => { state[input.dataset.collection][activeCollection[input.dataset.collection]][input.dataset.field] = input.value; render({ sync: false }); saveState(); }); input.addEventListener("change", () => { remember(interactionStart); interactionStart = null; }); });
+  $$('[data-collection-add]').forEach((button) => button.addEventListener("click", () => { const type = button.dataset.collectionAdd; const previous = clone(state); const item = type === "news" ? { tag: "更新", date: formatCollectionDate(), title: "新的更新项目", body: "在这里填写更新摘要。", image: "assets/news-cavern.png" } : { title: "新的系统分类", caption: "在这里填写分类说明。", image: "assets/feature-ecology.png" }; state[type].push(item); activeCollection[type] = state[type].length - 1; remember(previous); render(); saveState(); showToast("已增加集合项目"); }));
+  $$('[data-collection-remove]').forEach((button) => button.addEventListener("click", () => { const type = button.dataset.collectionRemove; if (state[type].length <= 1) return showToast("至少保留一个集合项目"); const previous = clone(state); state[type].splice(activeCollection[type], 1); activeCollection[type] = Math.max(0, Math.min(activeCollection[type], state[type].length - 1)); remember(previous); render(); saveState(); showToast("已删除集合项目"); }));
+  $$('[data-collection-page]').forEach((select) => select.addEventListener("change", () => { $(`[data-collection-sync="${select.dataset.collectionPage}"]`)?.click(); }));
+  $$('[data-collection-sync]').forEach((button) => button.addEventListener("click", () => { const type = button.dataset.collectionSync; const pageId = $(`[data-collection-page="${type}"]`)?.value; const page = state.pages.find((item) => item.id === pageId); const item = state[type][activeCollection[type]]; if (!page || !item) return showToast("请先选择子页"); const previous = clone(state); if (type === "news") Object.assign(item, { tag: page.eyebrow || page.tags?.[0] || "更新", date: formatCollectionDate(), title: page.title || page.navLabel, body: page.summary || "" }); else Object.assign(item, { title: page.title || page.navLabel, caption: page.summary || page.eyebrow || "" }); remember(previous); render(); saveState(); showToast(type === "news" ? "已读取子页标题、摘要与当前时间" : "已读取子页标题与摘要"); }));
 
   $("[data-page-list]")?.addEventListener("dragstart", (event) => {
     const item = event.target.closest("[data-page-select]"); if (!item) return;
