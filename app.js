@@ -2107,6 +2107,8 @@
       return;
     }
 
+    const subpageBack = event.target.closest(".subpage-back");
+    if (subpageBack) { event.preventDefault(); history.back(); return; }
     const directoryLink = event.target.closest('a[href*="view=pages"]');
     if (directoryLink) {
       const url = new URL(directoryLink.href, location.href);
