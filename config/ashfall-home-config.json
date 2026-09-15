@@ -30,6 +30,7 @@
   "tagColors": {
     "织影落花": "#fa0000",
     "织影落花：本体": "#c8c800",
+    "网页使用指南": "#35afc2",
     "织影落花 Mod 内容": "#6e00ff",
     "世界": "#50c878",
     "传统": "#778899",
@@ -142,52 +143,52 @@
     "manifesto:div:1": {
       "align": "stretch"
     },
-    "expertise:0:title": {
+    "expertise:1:title": {
       "text": "织影落花：本体 Mod 内容"
     },
-    "expertise:0:caption": {
+    "expertise:1:caption": {
       "text": "看看我们的Mod都有什么东西吧，从方块详情到成就获取方法，您都能在这里找到"
     },
-    "expertise:1:title": {
+    "expertise:2:title": {
       "text": "织影落花 更新汇总"
     },
-    "expertise:1:caption": {
+    "expertise:2:caption": {
       "text": "在这里不仅可以获取到Mod更新的第一手信息，也可以看到我们更新的痕迹"
     },
-    "expertise:2:title": {
+    "expertise:3:title": {
       "text": "深度：《概念》"
     },
-    "expertise:2:caption": {
+    "expertise:3:caption": {
       "text": "织影落花制作组的考据文章，同时也是分享我们Mod设计灵感的地方"
     },
-    "expertise:3:title": {
+    "expertise:4:title": {
       "text": "深度：《雅韵 & 禅宗》"
     },
-    "expertise:4:title": {
+    "expertise:5:title": {
       "text": "织影落花的更多信息"
     },
-    "expertise:5:title": {
+    "expertise:6:title": {
       "text": "茶道 & 酒水 饮品"
     },
-    "expertise:6:title": {
+    "expertise:7:title": {
       "text": "雅韵 & 禅宗 文化"
     },
-    "expertise:7:title": {
+    "expertise:8:title": {
       "text": "成就 & 挑战 内容"
     },
-    "expertise:3:caption": {
+    "expertise:4:caption": {
       "text": "来自织影落花制作组和用户们，收集并且展示大家想展示的东西"
     },
-    "expertise:4:caption": {
+    "expertise:5:caption": {
       "text": "织影落花的其他信息......可以在这里找找有没有呢？"
     },
-    "expertise:5:caption": {
+    "expertise:6:caption": {
       "text": "冬膳仍如常，年年一味已尝遍，今朝换新香"
     },
-    "expertise:6:caption": {
+    "expertise:7:caption": {
       "text": "春风渡南北，幽歌遗景皆入卷，万象俱往来"
     },
-    "expertise:7:caption": {
+    "expertise:8:caption": {
       "text": "枫叶映数言，寥寥几字添幽寂，一纸落花泪"
     },
     "news:0:title": {
@@ -274,17 +275,17 @@
     "expertise:img:0": {
       "text": "织影落花 Mod 内容"
     },
-    "expertise:1": {},
+    "expertise:2": {},
     "expertise:img:2": {
       "text": "《概念》"
-    },
-    "expertise:5": {
-      "hidden": true
     },
     "expertise:6": {
       "hidden": true
     },
     "expertise:7": {
+      "hidden": true
+    },
+    "expertise:8": {
       "hidden": true
     },
     "expertise:img:3": {}
@@ -306,9 +307,9 @@
     "about:a:1": "page-mtkh3cix",
     "sustainability:img:0": "page-mtixltw8",
     "sustainability:a:0": "page-mtixltw8",
-    "expertise:2:arrow": "page-mtns35bx",
-    "expertise:0:arrow": "page-mtnsprmd",
-    "expertise:1:arrow": "page-mtnvddkt"
+    "expertise:3:arrow": "page-mtns35bx",
+    "expertise:1:arrow": "page-mtnsprmd",
+    "expertise:2:arrow": "page-mtnvddkt"
   },
   "pages": [
     {
@@ -1716,6 +1717,11 @@
   ],
   "expertise": [
     {
+      "title": "网页使用指南",
+      "caption": "了解本网站的浏览、编辑与内容维护方式",
+      "image": "assets/feature-ecology.png"
+    },
+    {
       "title": "织影落花Mod内容",
       "caption": "看看我们的Mod都有什么东西吧，从方块详情到成就获取方法，您都能在这里找到",
       "image": "assets/uploads/expertise-01-1788390749362-e40a02.jpeg"
@@ -1757,7 +1763,7 @@
     }
   ],
   "configMeta": {
-    "revision": 34,
-    "updatedAt": "2026-09-15 14:20"
+    "revision": 36,
+    "updatedAt": "2026-09-16 04:45"
   }
 }

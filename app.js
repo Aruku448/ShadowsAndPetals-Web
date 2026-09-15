@@ -46,7 +46,8 @@
     trailerVideo: "",
     trailerImage: "assets/news-cavern.png",
     accent: "#DDFD5A",
-    tagColors: {},
+    tagColors: { "网页使用指南": "#35afc2" },
+    tagOrder: [],
     heroShade: 34,
     heroFocus: 52,
     textureGrain: 5,
@@ -127,6 +128,11 @@
   function autoTagColor(tag) { let hash = 0; [...String(tag || "")].forEach((character) => { hash = (hash * 31 + character.codePointAt(0)) >>> 0; }); return tagColorPalette[hash % tagColorPalette.length]; }
   function pageTagColor(page, tag) { const global = state?.tagColors?.[tag]; if (/^#[0-9a-f]{6}$/i.test(global || "")) return global; const custom = page.tagColors?.[tag]; return /^#[0-9a-f]{6}$/i.test(custom || "") ? custom : autoTagColor(tag); }
   function categoryTagColor(tag) { const page = state?.pages?.find((item) => (item.tags || []).includes(tag)); return page ? pageTagColor(page, tag) : autoTagColor(tag); }
+  function orderedTags(tags) {
+    const unique = [...new Set(tags.filter((tag) => tag && tag !== "未分类"))];
+    const order = state?.tagOrder || [];
+    return [...order.filter((tag) => unique.includes(tag)), ...unique.filter((tag) => !order.includes(tag)).sort((a, b) => a.localeCompare(b, "zh-CN"))];
+  }
 
   function mergeConfig(input = {}) {
     const merged = { ...clone(defaults), ...input };
@@ -139,6 +145,8 @@
     merged.customElements = Array.isArray(input.customElements) ? input.customElements : [];
     merged.pages = Array.isArray(input.pages) ? input.pages.map((page, index) => ({ ...clone(defaults.pages[0]), ...page, id: page.id || `page-${index + 1}`, tags: normalizePageTags(page.tags ?? page.eyebrow) })) : clone(defaults.pages);
     merged.tagColors = { ...clone(defaults.tagColors), ...(input.tagColors || {}) };
+    const knownTags = [...new Set(merged.pages?.flatMap((page) => normalizePageTags(page.tags)) || [])];
+    merged.tagOrder = [...new Set([...(Array.isArray(input.tagOrder) ? input.tagOrder : []), ...knownTags])].filter((tag) => tag && tag !== "未分类");
     merged.pages.forEach((page) => Object.entries(page.tagColors || {}).forEach(([tag, color]) => { if (!merged.tagColors[tag] && /^#[0-9a-f]{6}$/i.test(color)) merged.tagColors[tag] = color; }));
     // 页面分享必须可用：当前站点配置中的页面统一作为已发布页面处理。
     merged.pages.forEach((page) => { page.parentId = null; page.published = true; });
@@ -199,6 +207,7 @@
   let activePageId = viewPageId && viewPageId !== "missing" ? viewPageId : state.pages[0]?.id || null;
   let pageListQuery = "";
   let pageListStatus = "all";
+  let pageListTag = "";
   let pageListSort = "order";
   let draggedPageId = null;
   const collapsedPageIds = new Set();
@@ -369,7 +378,7 @@
     const hasAssignedTag = (page) => (page.tags || []).some((tag) => String(tag).trim() && tag !== "未分类");
     const directorySource = query ? state.pages : state.pages.filter(hasAssignedTag);
     const allPages = directorySource.filter((page) => (!category || (page.tags || []).includes(category)) && (!query || normalizeSearchText(searchPageText(page)).includes(normalizeSearchText(query))));
-    const categories = [...new Set(state.pages.flatMap((page) => page.tags || []).filter((tag) => tag !== "未分类"))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    const categories = orderedTags([...state.pages.flatMap((page) => page.tags || []), ...Object.keys(state.tagColors || {})]);
     const pageSize = 6;
     const totalPages = Math.max(1, Math.ceil(allPages.length / pageSize));
     const safePage = Math.min(currentPage, totalPages);
@@ -1095,6 +1104,52 @@
 
   function togglePageOutline(open = null) { const panel = $("[data-page-outline-panel]"); const toggle = $("[data-page-outline-header-toggle]"); if (!panel || !toggle) return; const next = open == null ? !panel.classList.contains("is-open") : open; if (next) { panel.inert = false; panel.setAttribute("aria-hidden", "false"); } panel.classList.toggle("is-open", next); toggle.setAttribute("aria-expanded", String(next)); toggle.setAttribute("aria-label", next ? "关闭文章大纲" : "打开文章大纲"); if (next) panel.querySelector("a")?.focus(); else closePageOutline(); }
 
+  function normalizeMindmapNodes(page) {
+    if (!page || !Array.isArray(page.mindmapNodes)) return [];
+    const nodes = page.mindmapNodes.map((node, index) => ({ id: String(node?.id || `node-${index + 1}`), label: String(node?.label || "未命名节点").trim() || "未命名节点", parentId: node?.parentId ? String(node.parentId) : null }));
+    const ids = new Set(nodes.map((node) => node.id));
+    nodes.forEach((node) => { if (!node.parentId || node.parentId === node.id || !ids.has(node.parentId)) node.parentId = null; });
+    return nodes;
+  }
+
+  function mindmapMermaidSource(nodes) {
+    const lines = ["flowchart LR"];
+    nodes.forEach((node, index) => lines.push(`  n${index}["${node.label.replace(/["\\]/g, "\\$&").replace(/\n/g, " ")}"]`));
+    nodes.forEach((node, index) => { const parent = nodes.findIndex((candidate) => candidate.id === node.parentId); if (parent >= 0) lines.push(`  n${parent} --> n${index}`); });
+    return lines.join("\n");
+  }
+
+  async function renderMindmapDiagram(container, nodes, { onNodeClick, onNodeToggle } = {}) {
+    if (!container) return;
+    container.textContent = "";
+    if (!nodes.length) { container.innerHTML = '<p class="mindmap-empty">暂无节点，请在编辑器中添加。</p>'; return; }
+    if (!window.mermaid) { container.textContent = "思维导图渲染器尚未加载"; return; }
+    try {
+      const { svg } = await window.mermaid.render(`mindmap-${Date.now()}`, mindmapMermaidSource(nodes));
+      if (container.isConnected) {
+        container.innerHTML = svg;
+        [...container.querySelectorAll("g.node")].forEach((element, index) => {
+          const node = nodes[index]; if (!node) return;
+          element.dataset.mindmapNodeId = node.id; element.setAttribute("tabindex", "0"); element.setAttribute("role", "button"); element.setAttribute("title", "单击打开，双击收起/展开"); element.style.cursor = "pointer";
+          const color = /^#[0-9a-f]{6}$/i.test(node.color || "") ? node.color : "#30332e";
+          element.querySelectorAll("rect, polygon, circle").forEach((shape) => {
+            shape.setAttribute("stroke", color); shape.setAttribute("stroke-width", "4"); shape.setAttribute("rx", "8"); shape.setAttribute("ry", "8");
+            shape.style.setProperty("stroke", color, "important"); shape.style.setProperty("stroke-width", "4px", "important"); shape.style.setProperty("rx", "8px", "important"); shape.style.setProperty("ry", "8px", "important");
+          });
+          element.addEventListener("click", () => onNodeClick?.(node));
+          element.addEventListener("dblclick", (event) => { event.preventDefault(); onNodeToggle?.(node); });
+        });
+      }
+    } catch { container.innerHTML = '<p class="mindmap-error">思维导图暂时无法渲染，请检查节点关系。</p>'; }
+  }
+
+  function renderPageMindmap(page, container) {
+    const nodes = normalizeMindmapNodes(page);
+    if (!container) return;
+    container.hidden = !nodes.length;
+    if (nodes.length) renderMindmapDiagram(container.querySelector("[data-mindmap-diagram]"), nodes);
+  }
+
   function renderSubpage({ animate = true } = {}) {
     const directory = $("[data-page-directory]");
     const view = $("[data-subpage-view]");
@@ -1161,6 +1216,7 @@
         <div class="subpage-copy">
           <h2 data-page-field-display="contentTitle">${escapeHTML(page.contentTitle)}</h2>
           <div class="markdown-body" data-page-field-display="body" data-page-markdown></div>
+          <section class="page-mindmap" data-page-mindmap-display hidden><div class="page-mindmap-heading"><span>文章结构</span><small>链式思维导图</small></div><div class="mindmap-diagram" data-mindmap-diagram aria-label="文章链式思维导图"></div></section>
           <div class="subpage-actions"><a class="inline-cta dark" href="${escapeHTML(page.ctaUrl || "#")}" data-page-cta data-page-field-display="ctaLabel">${escapeHTML(page.ctaLabel)} <span class="double-arrow" data-element-key="page:${escapeHTML(page.id)}:content:cta-arrow" aria-hidden="true"><i data-lucide="arrow-right"></i><i data-lucide="arrow-right"></i></span></a></div>
         </div>
         <aside class="page-outline-panel" data-page-outline-panel aria-label="文章大纲" aria-hidden="true"><div class="outline-header"><span>文章大纲</span><button class="icon-button outline-close" type="button" data-page-outline-close aria-label="关闭大纲"><i data-lucide="x"></i></button></div><nav data-page-outline></nav></aside>
@@ -1172,6 +1228,7 @@
     const outlinePanel = view.querySelector("[data-page-outline-panel]");
     if (outlinePanel) document.body.appendChild(outlinePanel);
     renderPageMarkdown(page);
+    renderPageMindmap(page, view.querySelector("[data-page-mindmap-display]"));
     closePageOutline();
     if (window.lucide) window.lucide.createIcons();
     revealHeroMedia($(".subpage-hero-media", view));
@@ -1445,20 +1502,74 @@
     const query = pageListQuery.toLocaleLowerCase();
     const rows = state.pages.filter((page) => {
       const matchesStatus = pageListStatus === "all" || pageListStatus === (page.published ? "published" : "draft");
+      const matchesTag = !pageListTag || (page.tags || []).includes(pageListTag);
       const haystack = [page.navLabel, page.title, page.slug, page.eyebrow, ...(page.tags || [])].filter(Boolean).join(" ").toLocaleLowerCase();
-      return matchesStatus && (!query || haystack.includes(query));
+      return matchesStatus && matchesTag && (!query || haystack.includes(query));
     });
     if (pageListSort === "title") rows.sort((a, b) => String(a.navLabel || a.title).localeCompare(String(b.navLabel || b.title), "zh-CN"));
     if (pageListSort === "status") rows.sort((a, b) => Number(b.published) - Number(a.published));
     return rows.map((page) => ({ page, depth: 0, hasChildren: false }));
   }
 
+  const collapsedMindmapIds = new Set();
+  function siteMindmapNodes(visibleOnly = true) {
+    const pages = state.pages.filter((page) => page && (page.title || page.navLabel));
+    const tags = [...new Set(pages.flatMap((page) => normalizePageTags(page.tags)).filter((tag) => tag && tag !== "未分类"))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    const hasUntagged = pages.some((page) => !normalizePageTags(page.tags).some((tag) => tag && tag !== "未分类"));
+    const groups = hasUntagged ? [...tags, "未分类"] : tags;
+    const nodes = [{ id: "site-root", label: state.brand || "织影落花集", parentId: null, color: state.accent }];
+    groups.forEach((tag, index) => nodes.push({ id: `site-tag-${index}`, label: tag, parentId: "site-root", color: categoryTagColor(tag) }));
+    pages.forEach((page, index) => {
+      const pageTags = normalizePageTags(page.tags).filter((tag) => tag && tag !== "未分类");
+      const group = pageTags[0] || "未分类";
+      const groupIndex = groups.indexOf(group);
+      nodes.push({ id: `site-page-${index}`, label: String(page.title || page.navLabel).replace(/\s+/g, " ").trim(), parentId: `site-tag-${groupIndex}`, pageId: page.id, color: pageTagColor(page, group) });
+    });
+    if (!visibleOnly) return nodes;
+    return nodes.filter((node) => {
+      let parentId = node.parentId;
+      while (parentId) { if (collapsedMindmapIds.has(parentId)) return false; parentId = nodes.find((candidate) => candidate.id === parentId)?.parentId || null; }
+      return true;
+    });
+  }
+
+  function renderSiteMindmap() {
+    const preview = $("[data-site-mindmap-preview]");
+    if (!preview) return;
+    const nodes = siteMindmapNodes();
+    const allNodes = siteMindmapNodes(false);
+    const collapseSelect = $("[data-site-mindmap-collapse-target]");
+    if (collapseSelect) {
+      const previous = collapseSelect.value;
+      collapseSelect.innerHTML = `<option value="">选择节点</option>${allNodes.filter((node) => node.id !== "site-root").map((node) => `<option value="${escapeHTML(node.id)}">${escapeHTML(node.label)}</option>`).join("")}`;
+      collapseSelect.value = allNodes.some((node) => node.id === previous) ? previous : "";
+    }
+    renderMindmapDiagram(preview, nodes, {
+      onNodeClick: (node) => {
+        if (node.pageId) { previewPage(node.pageId); return; }
+        if (node.id.startsWith("site-tag-")) { pageListTag = node.label === "未分类" ? "" : node.label; const select = $("[data-page-tag-filter]"); if (select) select.value = pageListTag; renderPageList(); }
+      },
+      onNodeToggle: (node) => { if (node.id === "site-root") return; if (collapsedMindmapIds.has(node.id)) collapsedMindmapIds.delete(node.id); else collapsedMindmapIds.add(node.id); renderSiteMindmap(); }
+    });
+  }
+
   function renderPageList() {
     const list = $("[data-page-list]"); if (!list) return;
+    const tagFilter = $("[data-page-tag-filter]");
+    if (tagFilter) {
+      const tags = orderedTags([...state.pages.flatMap((page) => page.tags || []), ...Object.keys(state.tagColors || {})]);
+      tagFilter.innerHTML = `<option value="">全部标签</option>${tags.map((tag) => `<option value="${escapeHTML(tag)}">${escapeHTML(tag)}</option>`).join("")}`;
+      tagFilter.value = pageListTag;
+    }
+    const tagOrder = $("[data-page-tag-order]");
+    if (tagOrder) {
+      const tags = orderedTags([...state.pages.flatMap((page) => page.tags || []), ...Object.keys(state.tagColors || {})]);
+      tagOrder.innerHTML = tags.map((tag, index) => `<button type="button" class="page-tag-order-item" draggable="true" data-page-tag-order-item="${escapeHTML(tag)}"><b>${String(index + 1).padStart(2, "0")}</b><span style="--tag-color:${categoryTagColor(tag)}">${escapeHTML(tag)}</span></button>`).join("");
+    }
     const rows = pageTreeRows();
-    list.innerHTML = rows.length ? rows.map(({ page }) => {
+    list.innerHTML = rows.length ? rows.map(({ page }, rowIndex) => {
       const index = state.pages.indexOf(page);
-      return `<div class="page-tree-node" role="treeitem" aria-level="1"><button type="button" class="page-tree-toggle" aria-hidden="true" tabindex="-1"></button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" draggable="true" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}${(page.tags || []).length ? ` · ${(page.tags || []).map(escapeHTML).join(" · ")}` : ""}</small></span></button></div>`;
+      return `<div class="page-tree-node${rowIndex > 0 && rowIndex % 6 === 0 ? " page-directory-break" : ""}" role="treeitem" aria-level="1"><button type="button" class="page-tree-toggle" aria-hidden="true" tabindex="-1"></button><button type="button" class="page-list-item${page.id === activePageId ? " is-selected" : ""}" data-page-select="${escapeHTML(page.id)}" draggable="${pageListSort === "order"}" role="option" aria-selected="${page.id === activePageId}"><b>${String(index + 1).padStart(2, "0")}</b><span><strong>${escapeHTML(page.navLabel || page.title)}</strong><small>/${escapeHTML(page.slug)}${page.published ? " · 已发布" : " · 草稿"}${(page.tags || []).length ? ` · ${(page.tags || []).map(escapeHTML).join(" · ")}` : ""}</small></span></button></div>`;
     }).join("") : '<p class="page-list-empty">没有匹配的文章</p>';
     const count = $("[data-page-count]"); if (count) count.textContent = `${rows.length} / ${state.pages.length}`;
   }
@@ -1543,6 +1654,24 @@
     $$('[data-page-tag-color]', inspector).forEach((input) => { const tag = page.tags?.[Number(input.dataset.pageTagColor)]; if (document.activeElement !== input) input.value = pageTagColor(page, tag); });
     const open = $(".page-open"); if (open) open.href = pageUrl(page.slug);
     renderHomeLinkControls(page);
+    renderMindmapEditor(page);
+  }
+
+  let activeMindmapNodeId = null;
+  function autoMindmapNodes(page) {
+    const rootLabel = String(page?.title || page?.navLabel || "文章").replace(/\s+/g, " ").trim() || "文章";
+    const root = { id: "mindmap-root", label: rootLabel, parentId: null };
+    const tags = normalizePageTags(page?.tags).map((tag, index) => ({ id: `mindmap-tag-${index + 1}`, label: tag, parentId: root.id }));
+    return [root, ...tags];
+  }
+
+  function renderMindmapEditor(page) {
+    const editor = $("[data-mindmap-editor]"); if (!editor) return;
+    const nodes = normalizeMindmapNodes(page);
+    if (page && JSON.stringify(page.mindmapNodes || []) !== JSON.stringify(nodes)) page.mindmapNodes = nodes;
+    if (!nodes.some((node) => node.id === activeMindmapNodeId)) activeMindmapNodeId = nodes[0]?.id || null;
+    editor.innerHTML = `<div class="mindmap-node-list">${nodes.length ? nodes.map((node, index) => { const parent = nodes.find((item) => item.id === node.parentId); return `<button type="button" class="mindmap-node${node.id === activeMindmapNodeId ? " is-active" : ""}" data-mindmap-node="${escapeHTML(node.id)}"><b>${String(index + 1).padStart(2, "0")}</b><span>${escapeHTML(node.label)}</span><small>${parent ? `↳ ${escapeHTML(parent.label)}` : "根节点"}</small></button>`; }).join("") : '<p class="mindmap-empty">还没有节点。</p>'}</div><div class="mindmap-node-fields"><label>节点文字<input type="text" data-mindmap-label maxlength="60" value="${escapeHTML(nodes.find((node) => node.id === activeMindmapNodeId)?.label || "")}" /></label><label>连接到<select data-mindmap-parent><option value="">根节点</option>${nodes.filter((node) => node.id !== activeMindmapNodeId).map((node) => `<option value="${escapeHTML(node.id)}"${node.id === nodes.find((item) => item.id === activeMindmapNodeId)?.parentId ? " selected" : ""}>${escapeHTML(node.label)}</option>`).join("")}</select></label><div class="mindmap-actions"><button type="button" class="tool-button" data-mindmap-auto>按标题和标签生成</button><button type="button" class="tool-button" data-mindmap-add-root>新增根节点</button><button type="button" class="tool-button" data-mindmap-add-child${activeMindmapNodeId ? "" : " disabled"}>新增子节点</button><button type="button" class="tool-button" data-mindmap-delete${activeMindmapNodeId ? "" : " disabled"}>删除节点</button></div></div><div class="mindmap-preview" data-mindmap-editor-preview aria-label="思维导图预览"></div>`;
+    renderMindmapDiagram(editor.querySelector("[data-mindmap-editor-preview]"), nodes);
   }
 
   function formatCollectionDate(date = new Date()) { const pad = (value) => String(value).padStart(2, "0"); return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`; }
@@ -1614,6 +1743,31 @@
   $$('[data-collection-page]').forEach((select) => select.addEventListener("change", () => { $(`[data-collection-sync="${select.dataset.collectionPage}"]`)?.click(); }));
   $$('[data-collection-sync]').forEach((button) => button.addEventListener("click", () => { const type = button.dataset.collectionSync; const pageId = $(`[data-collection-page="${type}"]`)?.value; const page = state.pages.find((item) => item.id === pageId); const item = state[type][activeCollection[type]]; if (!page || !item) return showToast("请先选择子页"); const previous = clone(state); if (type === "news") Object.assign(item, { tag: page.eyebrow || page.tags?.[0] || "更新", date: formatCollectionDate(), title: page.title || page.navLabel, body: page.summary || "" }); else Object.assign(item, { title: page.title || page.navLabel, caption: page.summary || page.eyebrow || "" }); remember(previous); render(); saveState(); showToast(type === "news" ? "已读取子页标题、摘要与当前时间" : "已读取子页标题与摘要"); }));
 
+  $("[data-site-mindmap-refresh]")?.addEventListener("click", () => { renderSiteMindmap(); showToast("已重新生成全站文章思维导图"); });
+  let draggedTag = null;
+  $("[data-page-tag-order]")?.addEventListener("dragstart", (event) => {
+    const item = event.target.closest("[data-page-tag-order-item]"); if (!item) return;
+    draggedTag = item.dataset.pageTagOrderItem; item.classList.add("is-dragging"); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", draggedTag);
+  });
+  $("[data-page-tag-order]")?.addEventListener("dragend", (event) => { event.target.closest("[data-page-tag-order-item]")?.classList.remove("is-dragging"); draggedTag = null; });
+  $("[data-page-tag-order]")?.addEventListener("dragover", (event) => { if (event.target.closest("[data-page-tag-order-item]")) event.preventDefault(); });
+  $("[data-page-tag-order]")?.addEventListener("drop", (event) => {
+    event.preventDefault(); const target = event.target.closest("[data-page-tag-order-item]");
+    if (!draggedTag || !target || draggedTag === target.dataset.pageTagOrderItem) return;
+    const tags = orderedTags([...state.pages.flatMap((page) => page.tags || []), ...Object.keys(state.tagColors || {})]); const from = tags.indexOf(draggedTag); const to = tags.indexOf(target.dataset.pageTagOrderItem); if (from < 0 || to < 0) return;
+    const previous = clone(state); tags.splice(from, 1); tags.splice(to, 0, draggedTag); state.tagOrder = tags; remember(previous); renderPageList(); saveState(); showToast("标签顺序已更新");
+  });
+  $$('[data-site-mindmap-collapse]').forEach((button) => button.addEventListener("click", () => {
+    const target = $("[data-site-mindmap-collapse-target]")?.value;
+    if (!target) return showToast("请先选择要操作的节点");
+    if (button.dataset.siteMindmapCollapse === "collapse") collapsedMindmapIds.add(target); else collapsedMindmapIds.delete(target);
+    renderSiteMindmap();
+  }));
+  $$('[data-site-mindmap-all]').forEach((button) => button.addEventListener("click", () => {
+    if (button.dataset.siteMindmapAll === "collapse") siteMindmapNodes(false).forEach((node) => { if (node.id !== "site-root") collapsedMindmapIds.add(node.id); });
+    else collapsedMindmapIds.clear();
+    renderSiteMindmap();
+  }));
   $("[data-page-list]")?.addEventListener("dragstart", (event) => {
     const item = event.target.closest("[data-page-select]"); if (!item) return;
     draggedPageId = item.dataset.pageSelect; item.classList.add("is-dragging");
@@ -1631,8 +1785,37 @@
   });
   $("[data-page-search]")?.addEventListener("input", (event) => { pageListQuery = event.target.value.trim(); renderPageList(); });
   $("[data-page-status]")?.addEventListener("change", (event) => { pageListStatus = event.target.value; renderPageList(); });
+  $("[data-page-tag-filter]")?.addEventListener("change", (event) => { pageListTag = event.target.value; renderPageList(); });
   $("[data-page-sort]")?.addEventListener("change", (event) => { pageListSort = event.target.value; renderPageList(); });
   $("[data-page-list]")?.addEventListener("click", (event) => { const toggle = event.target.closest("[data-page-toggle]"); if (toggle) { const pageId = toggle.dataset.pageToggle; if (collapsedPageIds.has(pageId)) collapsedPageIds.delete(pageId); else collapsedPageIds.add(pageId); renderPageList(); return; } const button = event.target.closest("[data-page-select]"); if (!button) return; previewPage(button.dataset.pageSelect); });
+  $("[data-mindmap-editor]")?.addEventListener("click", (event) => {
+    const page = selectedPage(); if (!page) return;
+    const nodeButton = event.target.closest("[data-mindmap-node]");
+    if (nodeButton) { activeMindmapNodeId = nodeButton.dataset.mindmapNode; renderMindmapEditor(page); return; }
+    const action = event.target.closest("[data-mindmap-add-root], [data-mindmap-add-child], [data-mindmap-delete]");
+    if (!action) return;
+    const previous = clone(state); const nodes = normalizeMindmapNodes(page);
+    if (action.matches("[data-mindmap-auto]")) {
+      page.mindmapNodes = autoMindmapNodes(page); activeMindmapNodeId = page.mindmapNodes[0]?.id || null;
+    } else if (action.matches("[data-mindmap-add-root], [data-mindmap-add-child]")) {
+      const id = `node-${Date.now().toString(36)}-${nodes.length}`;
+      nodes.push({ id, label: action.matches("[data-mindmap-add-child]") && activeMindmapNodeId ? "新的分支" : "中心主题", parentId: action.matches("[data-mindmap-add-child]") ? activeMindmapNodeId : null });
+      page.mindmapNodes = nodes; activeMindmapNodeId = id;
+    } else if (activeMindmapNodeId) {
+      const removed = nodes.find((node) => node.id === activeMindmapNodeId);
+      page.mindmapNodes = nodes.filter((node) => node.id !== activeMindmapNodeId).map((node) => node.parentId === activeMindmapNodeId ? { ...node, parentId: removed?.parentId || null } : node);
+      activeMindmapNodeId = page.mindmapNodes[0]?.id || null;
+    }
+    remember(previous); render({ sync: false }); renderMindmapEditor(page); saveState();
+  });
+  $("[data-mindmap-editor]")?.addEventListener("change", (event) => {
+    const page = selectedPage(); if (!page) return;
+    const nodes = normalizeMindmapNodes(page); const node = nodes.find((item) => item.id === activeMindmapNodeId); if (!node) return;
+    const previous = clone(state);
+    if (event.target.matches("[data-mindmap-label]")) node.label = event.target.value.trim() || "未命名节点";
+    if (event.target.matches("[data-mindmap-parent]")) node.parentId = event.target.value || null;
+    page.mindmapNodes = nodes; remember(previous); render({ sync: false }); renderMindmapEditor(page); saveState();
+  });
   $$('[data-page-field], [data-page-tag]').forEach((input) => {
     input.addEventListener("focus", () => { interactionStart = clone(state); });
     input.addEventListener("input", () => {
@@ -2042,6 +2225,7 @@
     if (window.lucide) window.lucide.createIcons();
     syncElementScopes();
     render(); observeReveals(); revealInViewport();
+    renderSiteMindmap();
     migrateEmbeddedImages();
     syncConfigMetaDisplay();
     if (isLocalDev) document.body.classList.add("is-dev");
