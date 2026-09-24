@@ -554,7 +554,7 @@
       "title": "欢迎来到：\n织影落花·本体",
       "summary": "在这里，您可以看到我们目前所有的信息",
       "contentTitle": "织影落花·本体",
-      "body": "您可以从以下详细浏览每一页的内容\n\n",
+      "body": "**织影落花·本体**是织影落花模组系列最核心的Mod，是整个模组系列的基石。\n\n在这个模组里，您可以在多种方面获得绝佳的体验。\n\n        1： 为了更好的分类，在Minecraft里没有单独分区的“工具 & 器皿”在这里被单独分成了一个部分。\n\n---\n\n# 织影落花·本体 Mod 内容：\n\n## 方块 & 道具：\n\n- 以下都是可以在Minecraft物品栏内检索到的物品\n\n### 自然 & 方块 世界：\n\n> [枫树](https://www.shadowsandpetals.com/index.html?page=maple-tree)\n> \n> [银杏树](https://www.shadowsandpetals.com/index.html?page=ginkgo-tree)\n> \n> [秋橡树](https://www.shadowsandpetals.com/index.html?page=autumn-oak-tree)\n> \n> [樱花树](https://www.shadowsandpetals.com/index.html?page=sakura-tree)\n> \n> [树叶衍生品](https://www.shadowsandpetals.com/index.html?page=leaves)\n> \n> [矾 & 铝](https://www.shadowsandpetals.com/index.html?page=bauxite-aluminum)\n\n### 外装 & 内搭 建材：\n\n> [木圆柱](https://www.shadowsandpetals.com/index.html?page=wood-pillar)\n> \n> [木柱](https://www.shadowsandpetals.com/index.html?page=wood-post)\n> \n> [清水混凝土](https://www.shadowsandpetals.com/index.html?page=raw-concrete)\n> \n> [瓦](https://www.shadowsandpetals.com/index.html?page=tile)\n> \n> [窗格](https://www.shadowsandpetals.com/index.html?page=winodw-pane)\n\n### 家具 & 摆件 陈设：\n\n> [咖啡椅](https://www.shadowsandpetals.com/index.html?page=cafe-chair)\n> \n> [日式围炉](https://www.shadowsandpetals.com/index.html?page=irori)\n> \n> [梳妆台](https://www.shadowsandpetals.com/index.html?page=vanity)\n> \n> [灯](https://www.shadowsandpetals.com/index.html?page=lamp)\n> \n> [窗帘](https://www.shadowsandpetals.com/index.html?page=curtain)\n> \n> [锭堆](https://www.shadowsandpetals.com/index.html?page=ingot-pile)\n\n### 庭院 & 仪式 传统：\n\n> [添水](https://www.shadowsandpetals.com/index.html?page=shishi-odoshi)\n> \n> [盆栽](https://www.shadowsandpetals.com/index.html?page=bonsai)\n> \n> [石山](https://www.shadowsandpetals.com/index.html?page=block-summary)\n> \n> [风铃](https://www.shadowsandpetals.com/index.html?page=wind-chime)\n\n### 农桑 & 菜品 料理：\n\n> [农作物](https://www.shadowsandpetals.com/index.html?page=crops)\n> \n> [茶](暂时还没有制作完毕\n\n### 工具 & 器皿 物械：\n\n> [锤子 & 凿子](https://www.shadowsandpetals.com/index.html?page=hammer-chisel)\n> \n> [耙子](https://www.shadowsandpetals.com/index.html?page=harrow)\n> \n> [茶壶](https://www.shadowsandpetals.com/index.html?page=teapot)\n> \n> [木桶](https://www.shadowsandpetals.com/index.html?page=barrel)\n\n## 其他类：\n\n- 以下是本Mod的东西，但是并不会在物品栏显示\n\n### 古迹 & 群系 结构：\n\n> 111\n\n### 成就 & 挑战 妙法：\n\n> 111\n",
       "heroImage": "assets/uploads/migrated-pages-0-heroimage-1788283442540-2852dd.jpeg",
       "ctaLabel": "对我们Mod感兴趣吗？点击这里下载",
       "ctaUrl": "./index.html#download",
@@ -1655,9 +1655,7 @@
       "slug": "crops",
       "tags": [
         "织影落花：本体",
-        "l",
-        "li",
-        "lia"
+        "料理"
       ],
       "tagColors": {},
       "navLabel": "多Mod：农作物",
@@ -1843,7 +1841,7 @@
     }
   ],
   "configMeta": {
-    "revision": 45,
-    "updatedAt": "2026-09-22 23:55"
+    "revision": 47,
+    "updatedAt": "2026-09-24 00:08"
   }
 }
