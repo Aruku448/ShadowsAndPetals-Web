@@ -28,10 +28,10 @@
   "trailerImage": "assets/uploads/home-trailerimage-1788554466568-5e0b32.jpeg",
   "accent": "#FF5A36",
   "tagColors": {
-    "网页使用指南": "#35afc2",
+    "网页使用指南": "#9d5715",
     "织影落花": "#fa0000",
     "织影落花：本体": "#c8c800",
-    "织影落花 Mod 内容": "#6e00ff",
+    "织影落花 Mod 内容": "#520bbc",
     "世界": "#50c878",
     "传统": "#778899",
     "物械": "#8b4513",
@@ -618,13 +618,11 @@
       "id": "page-mtnsvi4k",
       "parentId": null,
       "slug": "traditions",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {
         "织影落花": "#ff0a0a",
-        "织影落花：本体": "#c8c800"
+        "织影落花：本体": "#c8c800",
+        "织影落花 Mod 内容": "#45b878"
       },
       "navLabel": "庭院 & 仪式 传统",
       "eyebrow": "织影落花：本体",
@@ -646,12 +644,9 @@
       "id": "page-mtnsvnlx",
       "parentId": null,
       "slug": "nature",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {
-        "织影落花 Mod 内容": "#6e00ff"
+        "织影落花 Mod 内容": "#520bbc"
       },
       "navLabel": "自然 & 方块 世界",
       "eyebrow": "织影落花：本体",
@@ -673,10 +668,7 @@
       "id": "page-mtnsvok3",
       "parentId": null,
       "slug": "furnishings",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {},
       "navLabel": "家具 & 摆件 陈设",
       "eyebrow": "织影落花：本体",
@@ -698,10 +690,7 @@
       "id": "page-mtnsvpjl",
       "parentId": null,
       "slug": "tool",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {},
       "navLabel": "工具 & 器皿 物械",
       "eyebrow": "织影落花：本体",
@@ -723,10 +712,7 @@
       "id": "page-mtnsvqco",
       "parentId": null,
       "slug": "cuisine",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {},
       "navLabel": "农桑 & 菜品 料理",
       "eyebrow": "织影落花：本体",
@@ -748,10 +734,7 @@
       "id": "page-mtnups5y",
       "parentId": null,
       "slug": "achievement00",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {},
       "navLabel": "成就 & 挑战 妙法",
       "eyebrow": "织影落花 Mod 内容",
@@ -797,9 +780,7 @@
       "id": "page-mtra0h6x",
       "parentId": null,
       "slug": "更新",
-      "tags": [
-        "更新"
-      ],
+      "tags": [],
       "tagColors": {},
       "navLabel": "石山相关",
       "eyebrow": "更新",
@@ -845,10 +826,7 @@
       "id": "page-mu2r6r8q",
       "parentId": null,
       "slug": "architecture",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {},
       "navLabel": "外装 & 内搭 建材",
       "eyebrow": "织影落花：本体",
@@ -870,10 +848,7 @@
       "id": "page-mu2rc3c7",
       "parentId": null,
       "slug": "structure00",
-      "tags": [
-        "织影落花 Mod 内容",
-        "织影落花：本体"
-      ],
+      "tags": [],
       "tagColors": {},
       "navLabel": "古迹 & 群系 结构",
       "eyebrow": "织影落花：本体",
@@ -1630,9 +1605,12 @@
       "parentId": null,
       "slug": "readme",
       "tags": [
-        "织影落花"
+        "织影落花",
+        "网页使用指南"
       ],
-      "tagColors": {},
+      "tagColors": {
+        "网页使用指南": "#9d5715"
+      },
       "navLabel": "网页使用指南",
       "eyebrow": "网页使用指南",
       "title": "《织影落花集》\n阅读指南",
@@ -1841,7 +1819,7 @@
     }
   ],
   "configMeta": {
-    "revision": 47,
-    "updatedAt": "2026-09-24 00:08"
+    "revision": 49,
+    "updatedAt": "2026-09-24 00:27"
   }
 }
